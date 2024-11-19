@@ -9,6 +9,7 @@ HOST = 'localhost'
 PORT = 8000
 
 def read_from_socket(conn):
+    """gets a port and tries to recive from it untill the message end with a '\n'"""
     buf = bytearray(0)
     while True:
         b = conn.recv(1)
@@ -43,13 +44,6 @@ class Server(threading.Thread):
 
 class Client(threading.Thread):
     """client class built to send a message to another """
-    def sendMessage(self):
-        if len(clients)>1:
-                to = randint(0, len(clients) - 1)
-                message = ('%s:hello from %s\n' % (to, self.name)).encode('utf-8')
-                print(message)
-                self.ss.send(message)
-    
     def sendMessage(self, message):
         if len(clients)>1:
                 to = randint(0, len(clients) - 1)
@@ -72,6 +66,7 @@ class Client(threading.Thread):
         while True:
             self.receiveMessage()
 
+### initing servers and clients ###
 server=Server()
 client1=Client()
 client2=Client()
@@ -81,5 +76,6 @@ client1.start()
 client2.start()
 client3.start()
 
+### testing comunication ###
 time.sleep(1)
 client1.sendMessage("hi")
