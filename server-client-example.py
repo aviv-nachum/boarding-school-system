@@ -53,7 +53,7 @@ class Client(threading.Thread):
     def sendMessage(self, message):
         if len(clients)>1:
                 to = randint(0, len(clients) - 1)
-                message = (message + '\nto:%s \nfrom:%s\n' % (to, self.name))
+                message = ('%s:sent to %s\n' % (to, self.name)) + message
                 print(message)
                 self.ss.send(message.encode('utf-8'))
 
