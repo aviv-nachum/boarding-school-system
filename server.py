@@ -2,13 +2,13 @@ from socket import *
 from threading import Thread, Lock
 from config import *
 import sqlite3  # Database for storing messages
-from message import Message
+from exit_request import Message
 
 clients = {}  # Dictionary to store client ID -> socket mapping
 lock = Lock()  # Lock to ensure thread-safe access to the `clients` dictionary
 
 # Initialize SQLite database
-db_connection = sqlite3.connect('messages.db', check_same_thread=False)
+db_connection = sqlite3.connect('exit_requests.db', check_same_thread=False)
 cursor = db_connection.cursor()
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS messages (

@@ -1,6 +1,6 @@
 import time
 from server import Server
-from client import Client
+from student_client import Client
 
 # Initialize and start the server
 server = Server()

@@ -1,7 +1,7 @@
 from socket import *
 from threading import Thread
 from config import *
-from message import Message
+from exit_request import Message
 
 
 class Client(Thread):
