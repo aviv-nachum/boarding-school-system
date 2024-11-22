@@ -2,39 +2,40 @@ from socket import *
 import struct
 import json
 from threading import Thread
-from config import HOST, PORT
-
-def send_message_with_length(sock, message):
-    message_bytes = json.dumps(message).encode('utf-8')
-    packed_length = struct.pack('!I', len(message_bytes))
-    sock.sendall(packed_length + message_bytes)
-
-def receive_message_with_length(sock):
-    packed_length = sock.recv(4)
-    if not packed_length:
-        return None
-    length = struct.unpack('!I', packed_length)[0]
-    data = sock.recv(length).decode('utf-8')
-    return json.loads(data)
+from config import *
 
 class Client(Thread):
     def __init__(self):
+        """
+        Initialize the client socket and prepare for connection.
+        """
         super().__init__()
-        self.ss = socket(AF_INET, SOCK_STREAM)
+        self.ss = socket(AF_INET, SOCK_STREAM)  # Create a TCP socket
 
     def run(self):
-        self.ss.connect((HOST, PORT))
-        self.id = self.ss.getsockname()[1]
+        """
+        Connect to the server and start a separate thread to listen for incoming messages.
+        """
+        self.ss.connect((HOST, PORT))  # Connect to the server
+        self.id = self.ss.getsockname()[1]  # Use the socket's port number as the client ID
         print(f"Connected as Client {self.id}")
+        # Start a background thread to handle incoming messages
         Thread(target=self.receive_messages).start()
 
     def receive_messages(self):
+        """
+        Continuously listen for messages from the server.
+        """
         while True:
             try:
-                message = receive_message_with_length(self.ss)
-                print(f"Received: {message}")
-            except:
+                message = receive_message_with_length(self.ss)  # Receive and decode a message
+                print(f"Received: {message}")  # Print the received message
+            except:  # Exit the loop if an error occurs (e.g., disconnection)
                 break
 
     def send_message(self, to_id, message):
-        send_message_with_length(self.ss, {"to": to_id, "message": message})
+        """
+        Send a message to another client via the server.
+        Includes the target client's ID and the message content.
+        """
+        send_message_with_length(self.ss, {"to": to_id, "message": message})  # Prepare and send the message
