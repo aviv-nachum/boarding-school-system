@@ -2,6 +2,7 @@ from socket import *
 import struct
 import json
 from threading import Thread
+from config import HOST, PORT
 
 def send_message_with_length(sock, message):
     message_bytes = json.dumps(message).encode('utf-8')

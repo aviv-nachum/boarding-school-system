@@ -2,9 +2,7 @@ from socket import *
 from threading import Thread, Lock
 import struct
 import json
-
-HOST = 'localhost'
-PORT = 8000
+from config import HOST, PORT
 
 clients = {}  # Dictionary to store client ID -> socket
 lock = Lock()
