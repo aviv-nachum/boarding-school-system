@@ -1,7 +1,3 @@
-"""
-important info and functions all classes need access to
-"""
-
 import struct
 import json
 
