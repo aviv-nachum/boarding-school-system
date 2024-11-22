@@ -1,9 +1,24 @@
 from socket import *
 from threading import Thread, Lock
 from config import *
+import sqlite3  # Database for storing messages
+from message import Message
 
 clients = {}  # Dictionary to store client ID -> socket mapping
 lock = Lock()  # Lock to ensure thread-safe access to the `clients` dictionary
+
+# Initialize SQLite database
+db_connection = sqlite3.connect('messages.db', check_same_thread=False)
+cursor = db_connection.cursor()
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender_id INTEGER,
+    content TEXT
+)
+""")
+db_connection.commit()
+
 
 class Server(Thread):
     def __init__(self):
@@ -30,21 +45,27 @@ class Server(Thread):
 
     def client_handler(self, conn, client_id):
         """
-        Handle communication with a specific client. Relay messages to other clients.
+        Handle communication with a specific client. Store all messages in a database.
         """
+        # Create a thread-local database connection and cursor
+        thread_db_conn = sqlite3.connect('messages.db')  # New connection for this thread
+        thread_cursor = thread_db_conn.cursor()
+
         while True:
             try:
-                message = receive_message_with_length(conn)  # Receive a message from the client
+                # Receive the message object
+                message = Message.decode(conn)
                 if not message:  # If no message, the client likely disconnected
                     break
-                to_id = message['to']  # Target client ID
-                msg_content = message['message']  # Message content
-                print(f"Client {client_id} -> Client {to_id}: {msg_content}")
 
-                with lock:  # Ensure thread-safe access to `clients`
-                    if to_id in clients:  # If the target client is connected
-                        # Forward the message to the target client
-                        send_message_with_length(clients[to_id], {"from": client_id, "message": msg_content})
+                # Log the message in the database using the thread-local cursor
+                thread_cursor.execute(
+                    "INSERT INTO messages (sender_id, content) VALUES (?, ?)",
+                    (client_id, message.content)
+                )
+                thread_db_conn.commit()
+
+                print(f"Stored message from Client {client_id}: {message.content}")
             except Exception as e:
                 print(f"Error: {e}")  # Log any errors during communication
                 break
@@ -53,4 +74,5 @@ class Server(Thread):
         with lock:
             del clients[client_id]  # Remove client from the `clients` dictionary
         conn.close()  # Close the socket
+        thread_db_conn.close()  # Close the thread-local database connection
         print(f"Client {client_id} disconnected.")

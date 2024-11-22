@@ -1,8 +1,8 @@
 from socket import *
-import struct
-import json
 from threading import Thread
 from config import *
+from message import Message
+
 
 class Client(Thread):
     def __init__(self):
@@ -14,28 +14,28 @@ class Client(Thread):
 
     def run(self):
         """
-        Connect to the server and start a separate thread to listen for incoming messages.
+        Connect to the server and start a separate thread to listen for server responses.
         """
         self.ss.connect((HOST, PORT))  # Connect to the server
         self.id = self.ss.getsockname()[1]  # Use the socket's port number as the client ID
         print(f"Connected as Client {self.id}")
-        # Start a background thread to handle incoming messages
+        # Start a background thread to handle server messages (if needed)
         Thread(target=self.receive_messages).start()
 
     def receive_messages(self):
         """
-        Continuously listen for messages from the server.
+        Placeholder for receiving messages from the server if necessary.
         """
         while True:
             try:
-                message = receive_message_with_length(self.ss)  # Receive and decode a message
-                print(f"Received: {message}")  # Print the received message
-            except:  # Exit the loop if an error occurs (e.g., disconnection)
+                message = Message.decode(self.ss)  # Decode a message from the server
+                print(f"Server response: {message.content}")  # Print the received message
+            except:
                 break
 
-    def send_message(self, to_id, message):
+    def send_message(self, content):
         """
-        Send a message to another client via the server.
-        Includes the target client's ID and the message content.
+        Send a message to the server.
         """
-        send_message_with_length(self.ss, {"to": to_id, "message": message})  # Prepare and send the message
+        message = Message(content)  # Create a message object
+        self.ss.sendall(message.encode())  # Encode and send the message
