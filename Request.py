@@ -29,7 +29,7 @@ class RequestSerializer:
         return packed_length + message_bytes
 
     @staticmethod
-    def decode(sock):
+    def decode(sock): # TODO: be the opposite of encode, fix in server.py
         """
         Decode a message from the socket and return a Request object.
         """

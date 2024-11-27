@@ -3,11 +3,13 @@ from Server import Server
 from Student import Student
 from Staff import Staff
 
+# TODO: make everything interactive
+
 # Initialize and start the server
 server = Server()
 server.start()
 
-time.sleep(1)  # Allow the server to start before clients connect
+time.sleep(1)  # Allow the server to start before clients connect # TODO: replace all sleep with Thread.join
 
 # Create and start student clients
 student1 = Student()
@@ -18,7 +20,7 @@ student2.start()
 time.sleep(1)  # Allow clients to connect
 
 # Student profiles with unique IDs
-student1_profile = {
+student1_profile = { # TODO: hace a class "profile" to contain profile info
     "id": 101,  # Ensure unique ID
     "name": "Alice",
     "surname": "Johnson",

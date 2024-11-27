@@ -3,7 +3,6 @@ from threading import Thread
 from config import *
 from Request import *
 
-
 class Student(Thread):
     def __init__(self):
         super().__init__()

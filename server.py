@@ -5,8 +5,12 @@ from Request import Request, RequestSerializer
 import sqlite3
 import time
 
-clients = {}  # Connected clients (ID -> socket)
+clients = {}  # Connected clients (ID -> socket) TODO: del dictionery, use db only
 lock = Lock()
+
+# TODO: add class db_mannager that knows to save automaticly all of the info like profiles
+# TODO: in the init crate the db add function that saves info to db, put it server.run
+# TODO: make a list of all of the functions that need to go through the api
 
 # Retry mechanism for database operations
 def execute_with_retry(cursor, query, params=(), retries=3, delay=0.1):
@@ -50,7 +54,7 @@ class Server(Thread):
             print(f"Client {client_id} connected from {addr}.")
             Thread(target=self.client_handler, args=(conn, client_id)).start()
 
-    def client_handler(self, conn, client_id):
+    def client_handler(self, conn, client_id): # TODO: learn decorator 
         """
         Handle communication with a specific client.
         Each thread uses its own SQLite connection and cursor.
