@@ -3,102 +3,76 @@ from Server import Server
 from Student import Student
 from Staff import Staff
 
-# TODO: make everything interactive
+def interactive_main():
+    server = Server()
+    server.start()
+    server.join()  # Wait for the server thread to finish
 
-# Initialize and start the server
-server = Server()
-server.start()
+    # Create and start student clients
+    student1 = Student()
+    student2 = Student()
+    student1.start()
+    student2.start()
 
-time.sleep(1)  # Allow the server to start before clients connect # TODO: replace all sleep with Thread.join
+    student1_profile = {
+        "id": 101,
+        "name": "Alice",
+        "surname": "Johnson",
+        "grade": "10",
+        "class_number": 1,
+        "head_teacher_id": 201,
+        "head_madric_id": 301,
+        "role": "student"
+    }
 
-# Create and start student clients
-student1 = Student()
-student2 = Student()
-student1.start()
-student2.start()
+    student2_profile = {
+        "id": 102,
+        "name": "Bob",
+        "surname": "Smith",
+        "grade": "10",
+        "class_number": 1,
+        "head_teacher_id": 201,
+        "head_madric_id": 301,
+        "role": "student"
+    }
 
-time.sleep(1)  # Allow clients to connect
+    student1.register(student1_profile)
+    student2.register(student2_profile)
 
-# Student profiles with unique IDs
-student1_profile = { # TODO: hace a class "profile" to contain profile info
-    "id": 101,  # Ensure unique ID
-    "name": "Alice",
-    "surname": "Johnson",
-    "grade": "10",
-    "class_number": 1,
-    "head_teacher_id": 201,
-    "head_madric_id": 301,
-    "role": "student"
-}
+    time.sleep(1)
 
-student2_profile = {
-    "id": 102,  # Ensure unique ID
-    "name": "Bob",
-    "surname": "Smith",
-    "grade": "10",
-    "class_number": 1,
-    "head_teacher_id": 201,
-    "head_madric_id": 301,
-    "role": "student"
-}
+    student1.login(student1_profile["id"])
+    student2.login(student2_profile["id"])
 
-# Students register and log in
-student1.register(student1_profile)  # Use 'register' instead of 'signup'
-student2.register(student2_profile)
+    # Staff
+    staff = Staff()
+    staff.start()
 
-time.sleep(1)  # Allow registration to process
+    staff_profile = {
+        "id": 201,
+        "name": "Mr.",
+        "surname": "Anderson",
+        "client_student_id_dict": {
+            101: student1_profile,
+            102: student2_profile
+        },
+        "role": "teacher"
+    }
 
-student1.login(student1_profile["id"])
-student2.login(student2_profile["id"])
+    staff.register(staff_profile)
+    staff.login(staff_profile["id"])
 
-time.sleep(1)  # Allow login to process
+    # Submit and view exit request
+    student1.submit_request("Doctor’s appointment request", approver_id=staff_profile["id"])
+    staff.view_requests()
 
-# Create and start staff client
-staff = Staff()
-staff.start()
+    # Approve request
+    staff.approve_request(request_id=1)
 
-time.sleep(1)  # Allow staff client to connect
+    # Logout all
+    student1.logout()
+    student2.logout()
+    staff.logout()
 
-# Staff profile with unique ID
-staff_profile = {
-    "id": 201,  # Ensure unique ID
-    "name": "Mr.",
-    "surname": "Anderson",
-    "client_student_id_dict": {  # Students assigned to this staff member
-        101: student1_profile,
-        102: student2_profile
-    },
-    "role": "teacher"  # Staff-specific role
-}
-
-# Staff register and log in
-staff.register(staff_profile)
-
-time.sleep(1)  # Allow registration to process
-
-staff.login(staff_profile["id"])
-
-time.sleep(1)  # Allow login to process
-
-# Student 1 submits an exit request to their head teacher
-student1.submit_request(
-    content="Requesting permission to leave school early for a doctor’s appointment.",
-    approver_id=staff_profile["id"]
-)
-
-time.sleep(1)  # Allow exit request to process
-
-# Staff views exit requests
-staff.view_requests()
-
-time.sleep(1)  # Allow view request to process
-
-# Staff approves the exit request
-staff.approve_request(request_id=1)
-
-time.sleep(1)  # Allow approval to process
-
-# Students and staff log out
-student1.logout()
-student2.logout()
-staff.logout()
+if __name__ == "__main__":
+    interactive_main()

@@ -1,7 +1,7 @@
 from socket import *
 from threading import Thread
 from config import *
-from Request import *
+from Request import Request, RequestSerializer
 
 class Staff(Thread):
     def __init__(self):
@@ -13,42 +13,26 @@ class Staff(Thread):
         print("Connected to the server as staff.")
 
     def register(self, profile):
-        """
-        Register a new staff profile with the server.
-        """
         request = Request(action="signup", profile=profile)
         self.ss.sendall(RequestSerializer.encode(request))
         print("Registration request sent.")
 
     def login(self, staff_id):
-        """
-        Log in to the server using the staff ID.
-        """
         request = Request(action="login", student_id=staff_id)
         self.ss.sendall(RequestSerializer.encode(request))
         print("Login request sent.")
 
     def logout(self):
-        """
-        Log out from the server.
-        """
         request = Request(action="logout")
         self.ss.sendall(RequestSerializer.encode(request))
         print("Logout request sent.")
 
     def view_requests(self):
-        """
-        View requests assigned to this staff member.
-        """
         request = Request(action="view_requests")
         self.ss.sendall(RequestSerializer.encode(request))
         print("Request to view submissions sent.")
 
     def approve_request(self, request_id):
-        """
-        Approve a specific request by ID.
-        """
         request = Request(action="approve_request", request_id=request_id)
         self.ss.sendall(RequestSerializer.encode(request))
         print("Approval request sent.")
-
