@@ -1,6 +1,8 @@
 import struct
 import json
 
+# TODO: make the father class and all of the actions inherit from it. make every comand only take what it needs from the request class. use "is instence".
+
 class Request:
     """
     Represents a request sent between the client and server.

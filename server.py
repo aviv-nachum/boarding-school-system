@@ -25,7 +25,7 @@ def execute_with_retry(cursor, query, params=(), retries=3, delay=0.1):
     raise sqlite3.OperationalError("Failed to execute query after retries: database is locked.")
 
 # Decorator for client handler functions
-def client_action(func):
+def client_action(func): # TODO: the decorator needs to crate the dictionery for the functions, it will be called before every function and add it to the dictionery
     """
     Decorator for client handler functions to log actions and handle exceptions gracefully.
     """
@@ -44,7 +44,7 @@ class Server(Thread):
     Server class to manage client connections and handle requests.
     """
     def __init__(self):
-        reset_database()
+        reset_database() # this is just for testing, will be removed later
         super().__init__()
         self.addr = (HOST, PORT)
         self.init_db()
@@ -111,7 +111,7 @@ class Server(Thread):
         thread_cursor = thread_db_conn.cursor()
 
         # Map actions to their corresponding handler methods
-        action_handlers = {
+        action_handlers = { 
             "signup": self.process_register,
             "login": self.process_login,
             "logout": self.process_logout,

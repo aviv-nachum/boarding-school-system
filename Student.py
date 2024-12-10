@@ -3,7 +3,7 @@ from threading import Thread
 from config import *
 from Request import *
 
-class Student(Thread):
+class Student(Thread): # 
     def __init__(self):
         super().__init__()
         self.ss = socket(AF_INET, SOCK_STREAM)

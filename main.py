@@ -3,6 +3,7 @@ from Server import Server
 from Student import Student
 from Staff import Staff
 from Profile import Profile
+from threading import Thread
 
 # TODO: make everything interactive
 
@@ -10,7 +11,9 @@ from Profile import Profile
 server = Server()
 server.start()
 
-time.sleep(1)
+interval = 5
+
+time.sleep(interval)
 
 # Create and start student clients
 student1 = Student()
@@ -18,7 +21,7 @@ student2 = Student()
 student1.start()
 student2.start()
 
-time.sleep(1)  # Allow clients to connect
+time.sleep(interval)  # Allow clients to connect
 
 # Student profiles with unique IDs
 student1_profile = Profile(
@@ -44,21 +47,21 @@ student2_profile = Profile(
 ).to_dict()
 
 # Students register and log in
-student1.register(student1_profile)  # Use 'register' instead of 'signup'
+student1.register(student1_profile)  
 student2.register(student2_profile)
 
-time.sleep(1)  # Allow registration to process
+time.sleep(interval)  # Allow registration to process
 
 student1.login(student1_profile["id"])
 student2.login(student2_profile["id"])
 
-time.sleep(1)  # Allow login to process
+time.sleep(interval)  # Allow login to process
 
 # Create and start staff client
 staff = Staff()
 staff.start()
 
-time.sleep(1)  # Allow staff client to connect
+time.sleep(interval)  # Allow staff client to connect
 
 # Staff profile with unique ID
 staff_profile = {
@@ -75,29 +78,29 @@ staff_profile = {
 # Staff register and log in
 staff.register(staff_profile)
 
-time.sleep(1)  # Allow registration to process
+time.sleep(interval)  # Allow registration to process
 
 staff.login(staff_profile["id"])
 
-time.sleep(1)  # Allow login to process
+time.sleep(interval)  # Allow login to process
 
-# Student 1 submits an exit request to their head teacher
+# Student interval submits an exit request to their head teacher
 student1.submit_request(
     content="Requesting permission to leave school early for a doctor’s appointment.",
     approver_id=staff_profile["id"]
 )
 
-time.sleep(1)  # Allow exit request to process
+time.sleep(interval)  # Allow exit request to process
 
 # Staff views exit requests
 staff.view_requests()
 
-time.sleep(1)  # Allow view request to process
+time.sleep(interval)  # Allow view request to process
 
 # Staff approves the exit request
-staff.approve_request(request_id=1)
+staff.approve_request(request_id=interval)
 
-time.sleep(1)  # Allow approval to process
+time.sleep(interval)  # Allow approval to process
 
 # Students and staff log out
 student1.logout()
