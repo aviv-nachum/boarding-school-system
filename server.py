@@ -13,6 +13,9 @@ lock = Lock()
 
 # Retry mechanism for database operations
 def execute_with_retry(cursor, query, params=(), retries=3, delay=0.1):
+    """
+    Execute a database query with retry logic to handle locked database errors.
+    """
     for _ in range(retries):
         try:
             cursor.execute(query, params)
@@ -24,7 +27,25 @@ def execute_with_retry(cursor, query, params=(), retries=3, delay=0.1):
                 raise
     raise sqlite3.OperationalError("Failed to execute query after retries: database is locked.")
 
+# Decorator for client handler functions
+def client_action(func):
+    """
+    Decorator for client handler functions to log actions and handle exceptions gracefully.
+    """
+    def wrapper(self, request, conn, *args, **kwargs):
+        try:
+            self.log(f"Executing {func.__name__} for action '{request.action}'")
+            return func(self, request, conn, *args, **kwargs)
+        except Exception as e:
+            self.log(f"Error in {func.__name__}: {e}")
+            error_response = Request(action="error", content=f"Error: {str(e)}")
+            conn.sendall(RequestSerializer.encode(error_response))
+    return wrapper
+
 class Server(Thread):
+    """
+    Server class to manage client connections and handle requests.
+    """
     def __init__(self):
         reset_database()
         super().__init__()
@@ -93,6 +114,7 @@ class Server(Thread):
     def client_handler(self, conn):
         """
         Handle communication with a specific client.
+        Each client runs in its own thread with a separate database connection.
         """
         thread_db_conn = sqlite3.connect('system.db')
         thread_cursor = thread_db_conn.cursor()
@@ -135,39 +157,34 @@ class Server(Thread):
         thread_db_conn.close()
         self.log("Client handler thread terminated.")
 
+    @client_action
     def process_register(self, request, conn, cursor, db_conn):
         """
         Handle student or staff registration.
         """
         profile = request.profile
-        try:
-            self.log(f"Processing registration for profile ID: {profile['id']}")
+        self.log(f"Processing registration for profile ID: {profile['id']}")
 
-            # Check if the ID already exists
-            cursor.execute("SELECT id FROM profiles WHERE id = ?", (profile['id'],))
-            if cursor.fetchone():
-                self.log(f"Registration failed: ID {profile['id']} already exists.")
-                conn.sendall(RequestSerializer.encode(Request(action="signup_response", content="Registration failed: ID already exists.")))
-                return
+        # Check if the ID already exists
+        cursor.execute("SELECT id FROM profiles WHERE id = ?", (profile['id'],))
+        if cursor.fetchone():
+            self.log(f"Registration failed: ID {profile['id']} already exists.")
+            conn.sendall(RequestSerializer.encode(Request(action="signup_response", content="Registration failed: ID already exists.")))
+            return
 
-            # Insert the profile into the database
-            cursor.execute("""
-                INSERT INTO profiles (id, name, surname, grade, class_number, head_teacher_id, head_madric_id, role)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (profile['id'], profile['name'], profile['surname'], profile.get('grade', None),
-                profile.get('class_number', None), profile.get('head_teacher_id', None),
-                profile.get('head_madric_id', None), profile['role']))
-            db_conn.commit()
+        # Insert the profile into the database
+        cursor.execute("""
+            INSERT INTO profiles (id, name, surname, grade, class_number, head_teacher_id, head_madric_id, role)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (profile['id'], profile['name'], profile['surname'], profile.get('grade', None),
+              profile.get('class_number', None), profile.get('head_teacher_id', None),
+              profile.get('head_madric_id', None), profile['role']))
+        db_conn.commit()
 
-            self.log(f"Registration successful for profile ID: {profile['id']}")
-            conn.sendall(RequestSerializer.encode(Request(action="signup_response", content="Registration successful.")))
-        except sqlite3.IntegrityError as e:
-            self.log(f"Error during registration for profile ID {profile['id']}: {e}")
-            conn.sendall(RequestSerializer.encode(Request(action="signup_response", content="Registration failed: Database error.")))
-        except Exception as e:
-            self.log(f"Unexpected error during registration: {e}")
-            conn.sendall(RequestSerializer.encode(Request(action="signup_response", content="Registration failed: Unexpected error.")))
+        self.log(f"Registration successful for profile ID: {profile['id']}")
+        conn.sendall(RequestSerializer.encode(Request(action="signup_response", content="Registration successful.")))
 
+    @client_action
     def process_login(self, request, conn, cursor):
         """
         Handle login requests.
@@ -179,13 +196,14 @@ class Server(Thread):
         else:
             conn.sendall(RequestSerializer.encode(Request(action="login_response", content="Login failed: User not found.")))
 
-
+    @client_action
     def process_logout(self, request, conn):
         """
         Handle logout requests.
         """
-        conn.sendall("Logout successful.".encode('utf-8'))
+        conn.sendall(RequestSerializer.encode(Request(action="logout_response", content="Logout successful.")))
 
+    @client_action
     def process_request_submission(self, request, conn, cursor, db_conn):
         """
         Handle the submission of an exit request.
@@ -195,8 +213,9 @@ class Server(Thread):
             VALUES (?, ?, ?, ?)
         """, (request.student_id, request.content, False, request.approver_id))
         db_conn.commit()
-        conn.sendall("Request submission sent.".encode('utf-8'))
+        conn.sendall(RequestSerializer.encode(Request(action="submit_request_response", content="Request submission sent.")))
 
+    @client_action
     def process_request_approval(self, request, conn, cursor, db_conn):
         """
         Handle the approval of an exit request.
@@ -205,8 +224,9 @@ class Server(Thread):
             UPDATE exit_requests SET approved = 1 WHERE id = ?
         """, (request.request_id,))
         db_conn.commit()
-        conn.sendall("Approval request sent.".encode('utf-8'))
+        conn.sendall(RequestSerializer.encode(Request(action="approve_request_response", content="Approval request sent.")))
 
+    @client_action
     def process_view_requests(self, request, conn, cursor):
         """
         Handle viewing of exit requests by staff.
@@ -229,4 +249,3 @@ def reset_database():
     db_connection.commit()
     db_connection.close()
     print("Database reset completed.")
-
