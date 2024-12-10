@@ -2,14 +2,11 @@ from socket import *
 from threading import Thread, Lock
 from config import *
 from Request import Request, RequestSerializer
+from Profile import Profile  # Import the Profile class
 import sqlite3
 import time
 
 lock = Lock()
-
-# TODO: add class db_mannager that knows to save automaticly all of the info like profiles
-# TODO: in the init crate the db add function that saves info to db, put it server.run
-# TODO: make a list of all of the functions that need to go through the api
 
 # Retry mechanism for database operations
 def execute_with_retry(cursor, query, params=(), retries=3, delay=0.1):
@@ -35,7 +32,7 @@ def client_action(func):
     def wrapper(self, request, conn, *args, **kwargs):
         try:
             self.log(f"Executing {func.__name__} for action '{request.action}'")
-            return func(self, request, conn, *args, **kwargs)
+            return func(self, request, conn, *args, **kwargs)  # Pass correct arguments
         except Exception as e:
             self.log(f"Error in {func.__name__}: {e}")
             error_response = Request(action="error", content=f"Error: {str(e)}")
@@ -60,17 +57,11 @@ class Server(Thread):
         self.db_connection.execute("PRAGMA journal_mode=WAL;")
         cursor = self.db_connection.cursor()
 
-        # Create profiles table
+        # Update the profiles table to use a serialized_profile column
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS profiles (
                 id INTEGER PRIMARY KEY,
-                name TEXT,
-                surname TEXT,
-                grade TEXT,
-                class_number INTEGER,
-                head_teacher_id INTEGER,
-                head_madric_id INTEGER,
-                role TEXT
+                serialized_profile TEXT
             )
         """)
 
@@ -119,8 +110,19 @@ class Server(Thread):
         thread_db_conn = sqlite3.connect('system.db')
         thread_cursor = thread_db_conn.cursor()
 
+        # Map actions to their corresponding handler methods
+        action_handlers = {
+            "signup": self.process_register,
+            "login": self.process_login,
+            "logout": self.process_logout,
+            "submit_request": self.process_request_submission,
+            "approve_request": self.process_request_approval,
+            "view_requests": self.process_view_requests,
+        }
+
         while True:
             try:
+                # Decode the client request
                 request = RequestSerializer.decode(conn)
                 if not request:
                     self.log("Client disconnected.")
@@ -128,22 +130,12 @@ class Server(Thread):
 
                 self.log(f"Received action '{request.action}' from client.")
 
-                # Route the request to appropriate methods
-                action = request.action
-                if action == "signup":
-                    self.process_register(request, conn, thread_cursor, thread_db_conn)
-                elif action == "login":
-                    self.process_login(request, conn, thread_cursor)
-                elif action == "logout":
-                    self.process_logout(request, conn)
-                elif action == "submit_request":
-                    self.process_request_submission(request, conn, thread_cursor, thread_db_conn)
-                elif action == "approve_request":
-                    self.process_request_approval(request, conn, thread_cursor, thread_db_conn)
-                elif action == "view_requests":
-                    self.process_view_requests(request, conn, thread_cursor)
+                # Find the appropriate handler for the action
+                handler = action_handlers.get(request.action)
+                if handler:
+                    handler(request, conn, thread_cursor, thread_db_conn)
                 else:
-                    self.log(f"Unknown action: {action}")
+                    self.log(f"Unknown action: {request.action}")
                     conn.sendall(RequestSerializer.encode(Request(action="error", content="Unknown action.")))
 
             except ConnectionResetError:
@@ -160,44 +152,44 @@ class Server(Thread):
     @client_action
     def process_register(self, request, conn, cursor, db_conn):
         """
-        Handle student or staff registration.
+        Handle student or staff registration using the Profile class.
         """
-        profile = request.profile
-        self.log(f"Processing registration for profile ID: {profile['id']}")
+        profile = Profile.from_dict(request.profile)
+        self.log(f"Processing registration for profile ID: {profile.id}")
 
         # Check if the ID already exists
-        cursor.execute("SELECT id FROM profiles WHERE id = ?", (profile['id'],))
+        cursor.execute("SELECT id FROM profiles WHERE id = ?", (profile.id,))
         if cursor.fetchone():
-            self.log(f"Registration failed: ID {profile['id']} already exists.")
+            self.log(f"Registration failed: ID {profile.id} already exists.")
             conn.sendall(RequestSerializer.encode(Request(action="signup_response", content="Registration failed: ID already exists.")))
             return
 
-        # Insert the profile into the database
+        # Serialize the profile and store it in the database
+        serialized_profile = Profile.encode(profile).decode('utf-8')
         cursor.execute("""
-            INSERT INTO profiles (id, name, surname, grade, class_number, head_teacher_id, head_madric_id, role)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (profile['id'], profile['name'], profile['surname'], profile.get('grade', None),
-              profile.get('class_number', None), profile.get('head_teacher_id', None),
-              profile.get('head_madric_id', None), profile['role']))
+            INSERT INTO profiles (id, serialized_profile)
+            VALUES (?, ?)
+        """, (profile.id, serialized_profile))
         db_conn.commit()
 
-        self.log(f"Registration successful for profile ID: {profile['id']}")
+        self.log(f"Registration successful for profile ID: {profile.id}")
         conn.sendall(RequestSerializer.encode(Request(action="signup_response", content="Registration successful.")))
 
     @client_action
-    def process_login(self, request, conn, cursor):
+    def process_login(self, request, conn, cursor, db_conn):
         """
         Handle login requests.
         """
-        cursor.execute("SELECT * FROM profiles WHERE id = ?", (request.student_id,))
-        profile = cursor.fetchone()
-        if profile:
-            conn.sendall(RequestSerializer.encode(Request(action="login_response", content="Login successful.")))
+        cursor.execute("SELECT serialized_profile FROM profiles WHERE id = ?", (request.student_id,))
+        result = cursor.fetchone()
+        if result:
+            profile = Profile.decode(result[0].encode('utf-8'))
+            conn.sendall(RequestSerializer.encode(Request(action="login_response", content="Login successful.", profile=profile.to_dict())))
         else:
             conn.sendall(RequestSerializer.encode(Request(action="login_response", content="Login failed: User not found.")))
 
     @client_action
-    def process_logout(self, request, conn):
+    def process_logout(self, request, conn, cursor, db_conn):
         """
         Handle logout requests.
         """
@@ -227,7 +219,7 @@ class Server(Thread):
         conn.sendall(RequestSerializer.encode(Request(action="approve_request_response", content="Approval request sent.")))
 
     @client_action
-    def process_view_requests(self, request, conn, cursor):
+    def process_view_requests(self, request, conn, cursor, db_conn):
         """
         Handle viewing of exit requests by staff.
         """
@@ -244,8 +236,8 @@ def reset_database():
     """
     db_connection = sqlite3.connect('system.db')
     cursor = db_connection.cursor()
-    cursor.execute("DELETE FROM profiles")
-    cursor.execute("DELETE FROM exit_requests")
+    cursor.execute("DROP TABLE IF EXISTS profiles")
+    cursor.execute("DROP TABLE IF EXISTS exit_requests")
     db_connection.commit()
     db_connection.close()
     print("Database reset completed.")

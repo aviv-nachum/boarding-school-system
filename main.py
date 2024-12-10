@@ -2,6 +2,7 @@ import time
 from Server import Server
 from Student import Student
 from Staff import Staff
+from Profile import Profile
 
 # TODO: make everything interactive
 
@@ -9,7 +10,7 @@ from Staff import Staff
 server = Server()
 server.start()
 
-time.sleep(1)  # Allow the server to start before clients connect # TODO: replace all sleep with Thread.join
+time.sleep(1)
 
 # Create and start student clients
 student1 = Student()
@@ -20,27 +21,27 @@ student2.start()
 time.sleep(1)  # Allow clients to connect
 
 # Student profiles with unique IDs
-student1_profile = { # TODO: hace a class "profile" to contain profile info
-    "id": 101,  # Ensure unique ID
-    "name": "Alice",
-    "surname": "Johnson",
-    "grade": "10",
-    "class_number": 1,
-    "head_teacher_id": 201,
-    "head_madric_id": 301,
-    "role": "student"
-}
+student1_profile = Profile(
+    id=101,
+    name="Alice",
+    surname="Chohen",
+    role="student",
+    grade="12",
+    class_number=3,
+    head_teacher_id=201,
+    head_madric_id=301
+).to_dict()
 
-student2_profile = {
-    "id": 102,  # Ensure unique ID
-    "name": "Bob",
-    "surname": "Smith",
-    "grade": "10",
-    "class_number": 1,
-    "head_teacher_id": 201,
-    "head_madric_id": 301,
-    "role": "student"
-}
+student2_profile = Profile(
+    id=102,
+    name="Aviad",
+    surname="Gabay",
+    role="student",
+    grade="12",
+    class_number=3,
+    head_teacher_id=201,
+    head_madric_id=301
+).to_dict()
 
 # Students register and log in
 student1.register(student1_profile)  # Use 'register' instead of 'signup'
