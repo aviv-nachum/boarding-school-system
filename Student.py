@@ -18,7 +18,9 @@ class Student(Thread):
         """
         request = Request(action="signup", profile=profile)
         self.ss.sendall(RequestSerializer.encode(request))
-        print("Registration request sent.")
+        response = RequestSerializer.decode(self.ss)
+        if response:
+            print(response.content)
 
     def login(self, student_id):
         """
@@ -26,7 +28,9 @@ class Student(Thread):
         """
         request = Request(action="login", student_id=student_id)
         self.ss.sendall(RequestSerializer.encode(request))
-        print("Login request sent.")
+        response = RequestSerializer.decode(self.ss)
+        if response:
+            print(response.content)
 
     def logout(self):
         """
@@ -34,7 +38,9 @@ class Student(Thread):
         """
         request = Request(action="logout")
         self.ss.sendall(RequestSerializer.encode(request))
-        print("Logout request sent.")
+        response = RequestSerializer.decode(self.ss)
+        if response:
+            print(response.content)
 
     def submit_request(self, content, approver_id):
         """
@@ -43,7 +49,9 @@ class Student(Thread):
         try:
             request = Request(action="submit_request", content=content, approver_id=approver_id)
             self.ss.sendall(RequestSerializer.encode(request))
-            print("Request submission sent.")
+            response = RequestSerializer.decode(self.ss)
+            if response:
+                print(response.content)
         except ConnectionResetError:
             print("Error: Connection to server was lost.")
         except Exception as e:

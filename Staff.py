@@ -18,7 +18,9 @@ class Staff(Thread):
         """
         request = Request(action="signup", profile=profile)
         self.ss.sendall(RequestSerializer.encode(request))
-        print("Registration request sent.")
+        response = RequestSerializer.decode(self.ss)
+        if response:
+            print(response.content)
 
     def login(self, staff_id):
         """
@@ -26,7 +28,9 @@ class Staff(Thread):
         """
         request = Request(action="login", student_id=staff_id)
         self.ss.sendall(RequestSerializer.encode(request))
-        print("Login request sent.")
+        response = RequestSerializer.decode(self.ss)
+        if response:
+            print(response.content)
 
     def logout(self):
         """
@@ -34,7 +38,9 @@ class Staff(Thread):
         """
         request = Request(action="logout")
         self.ss.sendall(RequestSerializer.encode(request))
-        print("Logout request sent.")
+        response = RequestSerializer.decode(self.ss)
+        if response:
+            print(response.content)
 
     def view_requests(self):
         """
@@ -42,7 +48,9 @@ class Staff(Thread):
         """
         request = Request(action="view_requests")
         self.ss.sendall(RequestSerializer.encode(request))
-        print("Request to view submissions sent.")
+        response = RequestSerializer.decode(self.ss)
+        if response:
+            print(response.content)
 
     def approve_request(self, request_id):
         """
@@ -50,5 +58,6 @@ class Staff(Thread):
         """
         request = Request(action="approve_request", request_id=request_id)
         self.ss.sendall(RequestSerializer.encode(request))
-        print("Approval request sent.")
-
+        response = RequestSerializer.decode(self.ss)
+        if response:
+            print(response.content)
