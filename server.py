@@ -26,6 +26,7 @@ def execute_with_retry(cursor, query, params=(), retries=3, delay=0.1):
 
 class Server(Thread):
     def __init__(self):
+        reset_database()
         super().__init__()
         self.addr = (HOST, PORT)
         self.init_db()
@@ -104,9 +105,9 @@ class Server(Thread):
                     break
 
                 self.log(f"Received action '{request.action}' from client.")
-                action = request.action
 
                 # Route the request to appropriate methods
+                action = request.action
                 if action == "signup":
                     self.process_register(request, conn, thread_cursor, thread_db_conn)
                 elif action == "login":
@@ -120,7 +121,12 @@ class Server(Thread):
                 elif action == "view_requests":
                     self.process_view_requests(request, conn, thread_cursor)
                 else:
-                    conn.sendall("Error: Unknown action.".encode('utf-8'))
+                    self.log(f"Unknown action: {action}")
+                    conn.sendall(RequestSerializer.encode(Request(action="error", content="Unknown action.")))
+
+            except ConnectionResetError:
+                self.log("Client forcibly disconnected.")
+                break
             except Exception as e:
                 self.log(f"Error handling client: {e}")
                 break
@@ -135,23 +141,32 @@ class Server(Thread):
         """
         profile = request.profile
         try:
+            self.log(f"Processing registration for profile ID: {profile['id']}")
+
+            # Check if the ID already exists
             cursor.execute("SELECT id FROM profiles WHERE id = ?", (profile['id'],))
             if cursor.fetchone():
-                conn.sendall("Registration failed: ID already exists.".encode('utf-8'))
+                self.log(f"Registration failed: ID {profile['id']} already exists.")
+                conn.sendall(RequestSerializer.encode(Request(action="signup_response", content="Registration failed: ID already exists.")))
                 return
 
+            # Insert the profile into the database
             cursor.execute("""
                 INSERT INTO profiles (id, name, surname, grade, class_number, head_teacher_id, head_madric_id, role)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (profile['id'], profile['name'], profile['surname'], profile.get('grade', None),
-                  profile.get('class_number', None), profile.get('head_teacher_id', None),
-                  profile.get('head_madric_id', None), profile['role']))
+                profile.get('class_number', None), profile.get('head_teacher_id', None),
+                profile.get('head_madric_id', None), profile['role']))
             db_conn.commit()
 
-            conn.sendall("Registration successful.".encode('utf-8'))
+            self.log(f"Registration successful for profile ID: {profile['id']}")
+            conn.sendall(RequestSerializer.encode(Request(action="signup_response", content="Registration successful.")))
         except sqlite3.IntegrityError as e:
-            self.log(f"Error during registration: {e}")
-            conn.sendall("Registration failed: Database error.".encode('utf-8'))
+            self.log(f"Error during registration for profile ID {profile['id']}: {e}")
+            conn.sendall(RequestSerializer.encode(Request(action="signup_response", content="Registration failed: Database error.")))
+        except Exception as e:
+            self.log(f"Unexpected error during registration: {e}")
+            conn.sendall(RequestSerializer.encode(Request(action="signup_response", content="Registration failed: Unexpected error.")))
 
     def process_login(self, request, conn, cursor):
         """
@@ -160,9 +175,10 @@ class Server(Thread):
         cursor.execute("SELECT * FROM profiles WHERE id = ?", (request.student_id,))
         profile = cursor.fetchone()
         if profile:
-            conn.sendall("Login successful.".encode('utf-8'))
+            conn.sendall(RequestSerializer.encode(Request(action="login_response", content="Login successful.")))
         else:
-            conn.sendall("Login failed: User not found.".encode('utf-8'))
+            conn.sendall(RequestSerializer.encode(Request(action="login_response", content="Login failed: User not found.")))
+
 
     def process_logout(self, request, conn):
         """
@@ -201,3 +217,16 @@ class Server(Thread):
         requests = cursor.fetchall()
         response = [{"id": r[0], "student_id": r[1], "content": r[2], "approved": bool(r[3])} for r in requests]
         conn.sendall(RequestSerializer.encode(Request(action="view_requests_response", content=response)))
+
+def reset_database():
+    """
+    Clear the database by deleting all rows in tables.
+    """
+    db_connection = sqlite3.connect('system.db')
+    cursor = db_connection.cursor()
+    cursor.execute("DELETE FROM profiles")
+    cursor.execute("DELETE FROM exit_requests")
+    db_connection.commit()
+    db_connection.close()
+    print("Database reset completed.")
+
