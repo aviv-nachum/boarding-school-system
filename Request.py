@@ -5,7 +5,6 @@ class Request:
     """
     Represents a request sent between the client and server.
     """
-
     def __init__(self, action, student_id=None, content=None, approver_id=None, request_id=None, profile=None):
         self.action = action
         self.student_id = student_id
@@ -29,7 +28,7 @@ class RequestSerializer:
         return packed_length + message_bytes
 
     @staticmethod
-    def decode(sock): # TODO: be the opposite of encode, fix in server.py
+    def decode(sock):
         """
         Decode a message from the socket and return a Request object.
         """
@@ -37,7 +36,11 @@ class RequestSerializer:
         if not packed_length:
             return None
         length = struct.unpack('!I', packed_length)[0]
-        data = sock.recv(length).decode('utf-8')
-        request_data = json.loads(data)
+        data = b""
+        while len(data) < length:
+            chunk = sock.recv(length - len(data))
+            if not chunk:
+                return None
+            data += chunk
+        request_data = json.loads(data.decode('utf-8'))
         return Request(**request_data)
-
