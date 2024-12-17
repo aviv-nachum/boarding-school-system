@@ -4,15 +4,15 @@ class Profile: # TODO: make profile the father class and have staff_profile and 
     """
     Represents a profile for staff members and students.
     """
-    def __init__(self, id, name, surname, role, grade=None, class_number=None, head_teacher_id=None, head_madric_id=None):
+    def __init__(self, id, name, surname, grade=None, class_number=None, head_teacher_id=None, head_madric_id=None):
         self.id = id
         self.name = name
         self.surname = surname
-        self.role = role
         self.grade = grade  # For students only
         self.class_number = class_number  # For students only
         self.head_teacher_id = head_teacher_id  # For students only
         self.head_madric_id = head_madric_id  # For students only
+
 
     def to_dict(self):
         """
@@ -29,7 +29,6 @@ class Profile: # TODO: make profile the father class and have staff_profile and 
             id=data['id'],
             name=data['name'],
             surname=data['surname'],
-            role=data['role'],
             grade=data.get('grade'),
             class_number=data.get('class_number'),
             head_teacher_id=data.get('head_teacher_id'),

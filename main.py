@@ -28,7 +28,6 @@ student1_profile = Profile(
     id=101,
     name="Alice",
     surname="Chohen",
-    role="student",
     grade="12",
     class_number=3,
     head_teacher_id=201,
@@ -39,7 +38,6 @@ student2_profile = Profile(
     id=102,
     name="Aviad",
     surname="Gabay",
-    role="student",
     grade="12",
     class_number=3,
     head_teacher_id=201,
@@ -72,7 +70,7 @@ staff_profile = {
         101: student1_profile,
         102: student2_profile
     },
-    "role": "teacher"  # Staff-specific role
+    "Request_ids":{}
 }
 
 # Staff register and log in
@@ -98,7 +96,7 @@ staff.view_requests()
 time.sleep(interval)  # Allow view request to process
 
 # Staff approves the exit request
-staff.approve_request(request_id=interval)
+staff.approve_request(request_id=1)
 
 time.sleep(interval)  # Allow approval to process
 
@@ -106,3 +104,23 @@ time.sleep(interval)  # Allow approval to process
 student1.logout()
 student2.logout()
 staff.logout()
+
+# main menu 
+# 1 - log in
+# 2 - register
+# user_id = student1[id]
+
+# student menu
+# 1 - log out  -- db[user_id].logout() -> user_id = NULL -> main menu 
+# 2 - ask for exit request
+#     L 1 return
+#     L 2 enter exit request
+
+# staff menu
+# 1 - log out
+# 2 - view exit requests
+#     L 1 return
+#     L 2 select exit request
+#       L 1 return
+#       L 2 aprove exit request
+#       L 3 decline exit request 
