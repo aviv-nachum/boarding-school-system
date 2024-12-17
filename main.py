@@ -87,7 +87,7 @@ time.sleep(interval)  # Allow login to process
 # Student interval submits an exit request to their head teacher
 student1.submit_request(
     content="Requesting permission to leave school early for a doctor’s appointment.",
-    approver_id=staff_profile["id"]
+    approver_id=student1_profile["head_teacher_id"]
 )
 
 time.sleep(interval)  # Allow exit request to process

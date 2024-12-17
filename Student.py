@@ -42,7 +42,7 @@ class Student(Thread): #
         if response:
             print(response.content)
 
-    def submit_request(self, content, approver_id):
+    def submit_request(self, content, approver_id): # approver_id = self.profile["head_teacher_id"]
         """
         Submit a request to the student's assigned staff member.
         """
