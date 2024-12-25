@@ -7,15 +7,18 @@ from Profiles.Student_Profile import Student_Profile
 from threading import Thread
 
 # TODO: make everything interactive
+
 # Initialize and start the server
 server = Server()
 server.start()
-"""time.sleep(2)
+user = Student()
 
-user = 0
+
+interval = 2
+time.sleep(interval)
 
 # start menu
-def start_menu():
+def start_menu(): # fix instantaneous disconnection problem 
     print("---start menu--- \n 1 - student \n 2 - staff ")
     client_type = input(">>")
     
@@ -30,6 +33,7 @@ def start_menu():
         start_menu()
 
 start_menu()
+time.sleep(interval)
 
 # main menu
 def main_menu():
@@ -40,7 +44,7 @@ def main_menu():
         user.login(input("enter id: \n>>"))
 
     elif action == "2":
-        profile = Profile(
+        profile = Student_Profile(
         id = input("enter id: \n>>"),
         name = input("enter name: \n>>"),
         surname = input("enter surname: \n>>"),
@@ -48,11 +52,11 @@ def main_menu():
         class_number = input("enter class_number: \n>>"),
         head_teacher_id = input("enter head_teacher_id: \n>>"),
         head_madric_id = input("enter head_madric_id: \n>>")
-        ).to_dict()
+        )
 
         user.register(profile)
 
-main_menu()"""
+main_menu()
 
 # student menu
 # 1 - log out  -- db[user_id].logout() -> user_id = NULL -> main menu 
@@ -69,7 +73,6 @@ main_menu()"""
 #       L 2 aprove exit request
 #       L 3 decline exit request 
 
-interval = 2
 
 time.sleep(interval)
 

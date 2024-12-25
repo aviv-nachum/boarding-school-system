@@ -1,6 +1,6 @@
 import json
 
-class Profile: # TODO: make profile the father class and have staff_profile and student_profile inherit from it
+class Profile:
     """
     Represents a profile for staff members and students.
     """
