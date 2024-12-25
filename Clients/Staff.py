@@ -1,20 +1,20 @@
 from socket import *
 from threading import Thread
 from config import *
-from Request import *
+from Actions.Request import *
 
-class Student(Thread): # 
+class Staff(Thread):
     def __init__(self):
         super().__init__()
         self.ss = socket(AF_INET, SOCK_STREAM)
 
     def run(self):
         self.ss.connect((HOST, PORT))
-        print("Connected to the server as a student.")
+        print("Connected to the server as staff.")
 
     def register(self, profile):
         """
-        Register a new student profile with the server.
+        Register a new staff profile with the server.
         """
         request = Request(action="signup", profile=profile)
         self.ss.sendall(RequestSerializer.encode(request))
@@ -22,11 +22,11 @@ class Student(Thread): #
         if response:
             print(response.content)
 
-    def login(self, student_id):
+    def login(self, staff_id):
         """
-        Log in to the server using the student ID.
+        Log in to the server using the staff ID.
         """
-        request = Request(action="login", student_id=student_id)
+        request = Request(action="login", student_id=staff_id)
         self.ss.sendall(RequestSerializer.encode(request))
         response = RequestSerializer.decode(self.ss)
         if response:
@@ -42,17 +42,22 @@ class Student(Thread): #
         if response:
             print(response.content)
 
-    def submit_request(self, content, approver_id): # approver_id = self.profile["head_teacher_id"]
+    def view_requests(self):
         """
-        Submit a request to the student's assigned staff member.
+        View requests assigned to this staff member.
         """
-        try:
-            request = Request(action="submit_request", content=content, approver_id=approver_id)
-            self.ss.sendall(RequestSerializer.encode(request))
-            response = RequestSerializer.decode(self.ss)
-            if response:
-                print(response.content)
-        except ConnectionResetError:
-            print("Error: Connection to server was lost.")
-        except Exception as e:
-            print(f"Unexpected error: {e}")
+        request = Request(action="view_requests")
+        self.ss.sendall(RequestSerializer.encode(request))
+        response = RequestSerializer.decode(self.ss)
+        if response:
+            print(response.content)
+
+    def approve_request(self, request_id):
+        """
+        Approve a specific request by ID.
+        """
+        request = Request(action="approve_request", request_id=request_id)
+        self.ss.sendall(RequestSerializer.encode(request))
+        response = RequestSerializer.decode(self.ss)
+        if response:
+            print(response.content)

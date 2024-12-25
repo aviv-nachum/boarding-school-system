@@ -1,8 +1,8 @@
 from socket import *
 from threading import Thread, Lock
 from config import *
-from Request import Request, RequestSerializer
-from Profile import Profile  # Import the Profile class
+from Actions.Request import Request, RequestSerializer
+from Profiles.Profile import Profile  # Import the Profile class
 import sqlite3
 import time
 
@@ -53,7 +53,7 @@ class Server(Thread):
         """
         Initialize the database and set up the necessary tables.
         """
-        self.db_connection = sqlite3.connect('system.db', check_same_thread=False)
+        self.db_connection = sqlite3.connect('Database/system.db', check_same_thread=False)
         self.db_connection.execute("PRAGMA journal_mode=WAL;")
         cursor = self.db_connection.cursor()
 
@@ -107,7 +107,7 @@ class Server(Thread):
         Handle communication with a specific client.
         Each client runs in its own thread with a separate database connection.
         """
-        thread_db_conn = sqlite3.connect('system.db')
+        thread_db_conn = sqlite3.connect('Database/system.db')
         thread_cursor = thread_db_conn.cursor()
 
         # Map actions to their corresponding handler methods
@@ -234,7 +234,7 @@ def reset_database():
     """
     Clear the database by deleting all rows in tables.
     """
-    db_connection = sqlite3.connect('system.db')
+    db_connection = sqlite3.connect('Database/system.db')
     cursor = db_connection.cursor()
     cursor.execute("DROP TABLE IF EXISTS profiles")
     cursor.execute("DROP TABLE IF EXISTS exit_requests")

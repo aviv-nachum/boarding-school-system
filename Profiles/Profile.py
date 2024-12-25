@@ -4,14 +4,10 @@ class Profile: # TODO: make profile the father class and have staff_profile and 
     """
     Represents a profile for staff members and students.
     """
-    def __init__(self, id, name, surname, grade=None, class_number=None, head_teacher_id=None, head_madric_id=None):
+    def __init__(self, id, name, surname):
         self.id = id
         self.name = name
         self.surname = surname
-        self.grade = grade  # For students only
-        self.class_number = class_number  # For students only
-        self.head_teacher_id = head_teacher_id  # For students only
-        self.head_madric_id = head_madric_id  # For students only
 
 
     def to_dict(self):
@@ -28,11 +24,7 @@ class Profile: # TODO: make profile the father class and have staff_profile and 
         return Profile(
             id=data['id'],
             name=data['name'],
-            surname=data['surname'],
-            grade=data.get('grade'),
-            class_number=data.get('class_number'),
-            head_teacher_id=data.get('head_teacher_id'),
-            head_madric_id=data.get('head_madric_id')
+            surname=data['surname']
         )
 
     @staticmethod
