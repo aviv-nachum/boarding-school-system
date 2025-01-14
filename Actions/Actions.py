@@ -12,7 +12,6 @@ def client_action(cls):
     action_name = cls.action_name
     if action_name:
         action_handlers[action_name] = cls
-        print(f"Registered action: {action_name} -> {cls.__name__}")
     return cls
 
 @client_action

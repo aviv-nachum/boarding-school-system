@@ -19,6 +19,7 @@ def register_student():
     """Register a new student."""
     global user
     print("\n--- Register as Student ---")
+    id = input("Enter your id: ").strip()
     name = input("Enter your name: ").strip()
     surname = input("Enter your surname: ").strip()
     grade = input("Enter your grade: ").strip()
@@ -30,8 +31,10 @@ def register_student():
     user = Student()
     user.start()  # Ensure connection to the server
 
+    sleep(1)
+
     profile = Student_Profile(
-        id=None,  # Let the server assign an ID
+        id=id,  # Let the server assign an ID
         name=name,
         surname=surname,
         grade=grade,
@@ -76,6 +79,8 @@ def main_menu():
     print("4. Register as Staff")
     print("5. Exit")
     choice = input("Choose an option: ").strip()
+
+    sleep(2)
 
     if choice == "1":
         user = Student()
@@ -190,21 +195,6 @@ if __name__ == "__main__":
     main_menu()
 
 sleep(interval)
-
-# student menu
-# 1 - log out  -- db[user_id].logout() -> user_id = NULL -> main menu 
-# 2 - ask for exit request
-#     L 1 return
-#     L 2 enter exit request
-
-# staff menu
-# 1 - log out
-# 2 - view exit requests
-#     L 1 return
-#     L 2 select exit request
-#       L 1 return
-#       L 2 aprove exit request
-#       L 3 decline exit request 
 
 # Create and start student clients
 student1 = Student()
