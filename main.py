@@ -86,8 +86,6 @@ def main_menu():
         print("5. Exit")
         choice = input("Choose an option: ").strip()
 
-        
-
         if choice == "1":
             user = Student()
             user.start()  # Ensure connection to the server

@@ -28,6 +28,14 @@ class RequestSerializer:
         return packed_length + message_bytes
 
     @staticmethod
+    def decode_raw(data):
+        """
+        Deserialize a raw JSON string and convert it into a Request object.
+        """
+        request_data = json.loads(data)
+        return Request(**request_data)
+
+    @staticmethod
     def decode(sock):
         """
         Decode a message from the socket and return a Request object.

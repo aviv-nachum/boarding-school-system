@@ -101,8 +101,7 @@ class Server(Thread):
         cipher = AES.new(session_key, AES.MODE_CBC)
         encrypted_data = cipher.encrypt(pad(data.encode('utf-8'), AES.block_size))
         payload = cipher.iv + encrypted_data
-        return base64.b64encode(payload).decode('utf-8')  # Encode entire payload as base64
-
+        return base64.b64encode(payload)  # Encode entire payload as base64
 
     def decrypt_request(self, encrypted_data, session_key):
         """
@@ -112,21 +111,28 @@ class Server(Thread):
         iv = encrypted_data[:AES.block_size]  # Extract IV
         encrypted_message = encrypted_data[AES.block_size:]  # Extract ciphertext
         cipher = AES.new(session_key, AES.MODE_CBC, iv)
-        return unpad(cipher.decrypt(encrypted_message), AES.block_size).decode('utf-8')
-
+        return unpad(cipher.decrypt(encrypted_message), AES.block_size)  # Return decrypted plaintext
 
     def client_handler(self, conn):
         thread_db_conn = sqlite3.connect('Database/system.db')
         thread_cursor = thread_db_conn.cursor()
 
+        # Perform the RSA handshake
         conn.send(PUBLIC_KEY.export_key())
         encrypted_session_key = conn.recv(256)
         cipher_rsa = PKCS1_OAEP.new(PRIVATE_KEY)
-        session_key = cipher_rsa.decrypt(encrypted_session_key)
+        try:
+            session_key = cipher_rsa.decrypt(encrypted_session_key)
+            self.log(f"Decrypted session key: {session_key.hex()}")  # Log session key in hexadecimal
+        except Exception as e:
+            self.log(f"Failed to decrypt session key: {e}")
+            conn.close()
+            return
 
         while True:
-            try:
+            #try:
                 encrypted_request = conn.recv(4096)
+                print(encrypted_request)
                 if not encrypted_request:
                     self.log("Client disconnected.")
                     break
@@ -151,9 +157,9 @@ class Server(Thread):
                     self.log(f"Unknown action: {request.action}")
                     conn.send(self.encrypt_response("Unknown action", session_key).encode('utf-8'))
 
-            except Exception as e:
-                self.log(f"Error handling client: {e}")
-                break
+            #except Exception as e:
+             #   self.log(f"Error handling client: {e}")
+              #  break
 
         conn.close()
         thread_db_conn.close()

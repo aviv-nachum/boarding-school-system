@@ -32,19 +32,29 @@ class ProcessRegister:
         self.cursor.execute("SELECT id FROM profiles WHERE id = ?", (profile.id,))
         if self.cursor.fetchone():
             self.server.log(f"Registration failed: ID {profile.id} already exists.")
-            self.conn.sendall(RequestSerializer.encode(Request(action="signup_response", content="Registration failed: ID already exists.")))
-            return
+            response = Request(action="signup_response", content="Registration failed: ID already exists.")
+        else:
+            # Serialize the profile and store it in the database
+            serialized_profile = Profile.encode(profile).decode('utf-8')
+            self.cursor.execute("""
+                INSERT INTO profiles (id, serialized_profile)
+                VALUES (?, ?)
+            """, (profile.id, serialized_profile))
+            self.db_conn.commit()
+            self.server.log(f"Registration successful for profile ID: {profile.id}")
+            response = Request(action="signup_response", content="Registration successful.")
 
-        # Serialize the profile and store it in the database
-        serialized_profile = Profile.encode(profile).decode('utf-8')
-        self.cursor.execute("""
-            INSERT INTO profiles (id, serialized_profile)
-            VALUES (?, ?)
-        """, (profile.id, serialized_profile))
-        self.db_conn.commit()
+        # Encrypt and send response
+        try:
+            encrypted_response = self.server.encrypt_response(
+                RequestSerializer.encode(response),
+                request.session_key
+            )
+            self.server.log(f"Encrypted response to be sent: {encrypted_response}")
+            self.conn.sendall(encrypted_response)  # No .encode('utf-8') needed here since it's already bytes
+        except Exception as e:
+            self.server.log(f"Error encrypting or sending response: {e}")
 
-        self.server.log(f"Registration successful for profile ID: {profile.id}")
-        self.conn.sendall(RequestSerializer.encode(Request(action="signup_response", content="Registration successful.")))
 
 
 @client_action
