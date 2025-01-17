@@ -6,26 +6,28 @@ from Profiles.Staff_Profile import Staff_Profile
 from Profiles.Student_Profile import Student_Profile
 from threading import Thread
 
+interval = 3
+
 # Initialize and start the server
 server = Server()
 server.start()
 sleep(1)
-interval = 0
 
 user_id = None  # To track the currently logged-in user
 user = None  # To track whether the user is a Student or Staff
+
 
 def register_student():
     """Register a new student."""
     global user
     print("\n--- Register as Student ---")
-    id = input("Enter your id: ").strip()
+    id = input("Enter your ID: ").strip()
     name = input("Enter your name: ").strip()
     surname = input("Enter your surname: ").strip()
     grade = input("Enter your grade: ").strip()
     class_number = int(input("Enter your class number: ").strip())
     head_teacher_id = int(input("Enter your head teacher ID: ").strip())
-    head_madric_id = int(input("Enter your head madric ID: ").strip())
+    head_madric_id = int(input("Enter your head madrich ID: ").strip())
 
     # Create and start the client
     user = Student()
@@ -34,7 +36,7 @@ def register_student():
     sleep(1)
 
     profile = Student_Profile(
-        id=id,  # Let the server assign an ID
+        id=id,
         name=name,
         surname=surname,
         grade=grade,
@@ -51,6 +53,7 @@ def register_staff():
     """Register a new staff member."""
     global user
     print("\n--- Register as Staff ---")
+    id = input("Enter your ID: ").strip()
     name = input("Enter your name: ").strip()
     surname = input("Enter your surname: ").strip()
 
@@ -58,8 +61,10 @@ def register_staff():
     user = Staff()
     user.start()  # Ensure connection to the server
 
+    sleep(1)
+
     profile = Staff_Profile(
-        id=None,  # Let the server assign an ID
+        id=id,
         name=name,
         surname=surname,
         client_student_id_dict={},  # Start with no assigned students
@@ -69,128 +74,89 @@ def register_staff():
     print("Staff registered successfully.")
 
 
-# Function to display the main menu
 def main_menu():
+    """Display the main menu."""
     global user_id, user
-    print("\n--- Main Menu ---")
-    print("1. Log in as Student")
-    print("2. Log in as Staff")
-    print("3. Register as Student")
-    print("4. Register as Staff")
-    print("5. Exit")
-    choice = input("Choose an option: ").strip()
+    while True:
+        print("\n--- Main Menu ---")
+        print("1. Log in as Student")
+        print("2. Log in as Staff")
+        print("3. Register as Student")
+        print("4. Register as Staff")
+        print("5. Exit")
+        choice = input("Choose an option: ").strip()
 
-    sleep(2)
+        
 
-    if choice == "1":
-        user = Student()
-        user.start()  # Ensure connection to the server
-        user_id = int(input("Enter your Student ID: ").strip())
-        user.login(user_id)
-        print("Logged in as Student.")
-        student_menu()
-    elif choice == "2":
-        user = Staff()
-        user.start()  # Ensure connection to the server
-        user_id = int(input("Enter your Staff ID: ").strip())
-        user.login(user_id)
-        print("Logged in as Staff.")
-        staff_menu()
-    elif choice == "3":
-        register_student()
-        main_menu()
-    elif choice == "4":
-        register_staff()
-        main_menu()
-    elif choice == "5":
-        print("Exiting the program...")
-        exit()
-    else:
-        print("Invalid option. Please try again.")
-        main_menu()
+        if choice == "1":
+            user = Student()
+            user.start()  # Ensure connection to the server
+            sleep(1)
+            user_id = int(input("Enter your Student ID: ").strip())
+            user.login(user_id)
+            if user.session_id:
+                student_menu()
+        elif choice == "2":
+            user = Staff()
+            user.start()  # Ensure connection to the server
+            sleep(1)
+            user_id = int(input("Enter your Staff ID: ").strip())
+            user.login(user_id)
+            if user.session_id:
+                staff_menu()
+        elif choice == "3":
+            register_student()
+        elif choice == "4":
+            register_staff()
+        elif choice == "5":
+            print("Exiting the program...")
+            exit()
+        else:
+            print("Invalid option. Please try again.")
 
 
-# Function to handle the student menu
 def student_menu():
+    """Display the student menu."""
     global user_id, user
-    print("\n--- Student Menu ---")
-    print("1. Log out")
-    print("2. Ask for exit request")
-    choice = input("Choose an option: ").strip()
+    while True:
+        print("\n--- Student Menu ---")
+        print("1. Log out")
+        print("2. Ask for exit request")
+        choice = input("Choose an option: ").strip()
 
-    if choice == "1":
-        if user_id:
+        if choice == "1":
             user.logout()
             user_id = None
-        main_menu()
-    elif choice == "2":
-        print("\n--- Exit Request Menu ---")
-        print("1. Return to Student Menu")
-        print("2. Enter exit request")
-        sub_choice = input("Choose an option: ").strip()
-        if sub_choice == "1":
-            student_menu()
-        elif sub_choice == "2":
+            break
+        elif choice == "2":
             content = input("Enter the content of your exit request: ").strip()
             approver_id = int(input("Enter the approver ID: ").strip())
             user.submit_request(content=content, approver_id=approver_id)
-            print("Exit request submitted.")
-            student_menu()
         else:
             print("Invalid option. Please try again.")
-            student_menu()
-    else:
-        print("Invalid option. Please try again.")
-        student_menu()
 
 
-# Function to handle the staff menu
 def staff_menu():
+    """Display the staff menu."""
     global user_id, user
-    print("\n--- Staff Menu ---")
-    print("1. Log out")
-    print("2. View exit requests")
-    choice = input("Choose an option: ").strip()
+    while True:
+        print("\n--- Staff Menu ---")
+        print("1. Log out")
+        print("2. View exit requests")
+        choice = input("Choose an option: ").strip()
 
-    if choice == "1":
-        if user_id:
+        if choice == "1":
             user.logout()
             user_id = None
-        main_menu()
-    elif choice == "2":
-        print("\n--- View Requests Menu ---")
-        print("1. Return to Staff Menu")
-        print("2. Select exit request")
-        sub_choice = input("Choose an option: ").strip()
-        if sub_choice == "1":
-            staff_menu()
-        elif sub_choice == "2":
-            request_id = int(input("Enter the request ID to approve/decline: ").strip())
-            print("1. Return to Staff Menu")
-            print("2. Approve exit request")
-            print("3. Decline exit request")
-            sub_sub_choice = input("Choose an option: ").strip()
-            if sub_sub_choice == "1":
-                staff_menu()
-            elif sub_sub_choice == "2":
-                user.approve_request(request_id=request_id)
-                print("Request approved.")
-                staff_menu()
-            elif sub_sub_choice == "3":
-                print("Declining requests is not implemented yet.")  # Placeholder
-                staff_menu()
-            else:
-                print("Invalid option. Please try again.")
-                staff_menu()
+            break
+        elif choice == "2":
+            user.view_requests()
+            request_id = int(input("Enter the request ID to approve: ").strip())
+            user.approve_request(request_id=request_id)
         else:
             print("Invalid option. Please try again.")
-            staff_menu()
-    else:
-        print("Invalid option. Please try again.")
-        staff_menu()
 
 
-# Main loop
 if __name__ == "__main__":
     main_menu()
 
