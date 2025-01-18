@@ -12,6 +12,10 @@ import base64
 import sqlite3
 import time
 import os
+import logging
+import json
+
+logging.basicConfig(level=logging.DEBUG)
 
 lock = Lock()
 
@@ -47,7 +51,7 @@ def execute_with_retry(cursor, query, params=(), retries=3, delay=0.1):
 class Server(Thread):
     def __init__(self):
         reset_database()
-        super().__init__()
+        super().__init__() 
         self.addr = (HOST, PORT)
         self.init_db()
         self.sessions = {}
@@ -123,16 +127,15 @@ class Server(Thread):
         cipher_rsa = PKCS1_OAEP.new(PRIVATE_KEY)
         try:
             session_key = cipher_rsa.decrypt(encrypted_session_key)
-            self.log(f"Decrypted session key: {session_key.hex()}")  # Log session key in hexadecimal
         except Exception as e:
             self.log(f"Failed to decrypt session key: {e}")
             conn.close()
             return
 
         while True:
-            #try:
+            try:
                 encrypted_request = conn.recv(4096)
-                print(encrypted_request)
+                #print(encrypted_request)
                 if not encrypted_request:
                     self.log("Client disconnected.")
                     break
@@ -140,36 +143,79 @@ class Server(Thread):
                 decrypted_request = self.decrypt_request(encrypted_request.decode('utf-8'), session_key)
                 request = RequestSerializer.decode_raw(decrypted_request)  # Adjusted decode method
 
+                # Ensure session_key is bytes
+                if isinstance(request.session_key, str):
+                    missing_padding = len(request.session_key) % 4
+                    if missing_padding:
+                        request.session_key += '=' * (4 - missing_padding)
+                    request.session_key = base64.b64decode(request.session_key)
+
                 self.log(f"Received action '{request.action}' from client.")
 
-                if request.action not in ["signup", "login"]:
-                    session_id = request.content.get("session_id")
-                    if not session_id or session_id not in self.sessions:
-                        self.log("Unauthorized access attempt.")
-                        conn.send(self.encrypt_response("Unauthorized access", session_key).encode('utf-8'))
-                        continue
-
-                handler_class = action_handlers.get(request.action)
-                if handler_class:
-                    handler_instance = handler_class(self, conn, thread_cursor, thread_db_conn)
-                    handler_instance.handle_action(request)
+                if request.action == "signup":
+                    print(f"Processing registration for profile ID: {request.profile['id']}")
+                    # Perform registration logic here
+                    print(f"Registration successful for profile ID: {request.profile['id']}")
+                    response = "Registration successful"
+                elif request.action == "login":
+                    print(f"Received action '{request.action}' from client.")
+                    print(f"Processing login for student ID: {request.student_id}")
+                    # Perform login logic here
+                    session_id = "some_unique_session_id"  # Generate or retrieve the session ID
+                    response = {"message": "Login successful", "session_id": session_id}
+                    response = json.dumps(response)
                 else:
-                    self.log(f"Unknown action: {request.action}")
-                    conn.send(self.encrypt_response("Unknown action", session_key).encode('utf-8'))
+                    response = "Unknown action"
 
-            #except Exception as e:
-             #   self.log(f"Error handling client: {e}")
-              #  break
+                # Encrypt and send the response
+                encrypted_response = self.encrypt_response(response, request.session_key)
+                conn.send(encrypted_response)
+
+            except Exception as e:
+                self.log(f"Error handling client: {e}")
+                break
 
         conn.close()
         thread_db_conn.close()
         self.log("Client handler thread terminated.")
 
 def reset_database():
-    db_connection = sqlite3.connect('Database/system.db')
-    cursor = db_connection.cursor()
+    connection = sqlite3.connect('Database/system.db')
+    cursor = connection.cursor()
+
+    # Drop tables if they exist
     cursor.execute("DROP TABLE IF EXISTS profiles")
-    cursor.execute("DROP TABLE IF EXISTS exit_requests")
-    db_connection.commit()
-    db_connection.close()
-    print("Database reset completed.")
+    cursor.execute("DROP TABLE IF EXISTS students")
+    cursor.execute("DROP TABLE IF EXISTS staff")
+
+    # Create tables
+    cursor.execute('''
+        CREATE TABLE profiles (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            surname TEXT NOT NULL,
+            grade TEXT,
+            class_number INTEGER,
+            head_teacher_id INTEGER,
+            head_madric_id INTEGER
+        )
+    ''')
+
+    cursor.execute('''
+        CREATE TABLE students (
+            id INTEGER PRIMARY KEY,
+            profile_id INTEGER,
+            FOREIGN KEY (profile_id) REFERENCES profiles (id)
+        )
+    ''')
+
+    cursor.execute('''
+        CREATE TABLE staff (
+            id INTEGER PRIMARY KEY,
+            profile_id INTEGER,
+            FOREIGN KEY (profile_id) REFERENCES profiles (id)
+        )
+    ''')
+
+    connection.commit()
+    connection.close()

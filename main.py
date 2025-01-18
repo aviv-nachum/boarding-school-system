@@ -75,8 +75,6 @@ def register_staff():
 
 
 def main_menu():
-    """Display the main menu."""
-    global user_id, user
     while True:
         print("\n--- Main Menu ---")
         print("1. Log in as Student")
@@ -86,52 +84,52 @@ def main_menu():
         print("5. Exit")
         choice = input("Choose an option: ").strip()
 
-        if choice == "1":
-            user = Student()
-            user.start()  # Ensure connection to the server
-            sleep(1)
-            user_id = int(input("Enter your Student ID: ").strip())
-            user.login(user_id)
-            if user.session_id:
-                student_menu()
-        elif choice == "2":
-            user = Staff()
-            user.start()  # Ensure connection to the server
-            sleep(1)
-            user_id = int(input("Enter your Staff ID: ").strip())
-            user.login(user_id)
-            if user.session_id:
-                staff_menu()
-        elif choice == "3":
+        if choice == '1':
+            login_student()
+        elif choice == '2':
+            login_staff()
+        elif choice == '3':
             register_student()
-        elif choice == "4":
+        elif choice == '4':
             register_staff()
-        elif choice == "5":
-            print("Exiting the program...")
-            exit()
+        elif choice == '5':
+            break
         else:
-            print("Invalid option. Please try again.")
+            print("Invalid choice. Please try again.")
+
+
+def login_student():
+    global user
+    print("\n--- Log in as Student ---")
+    student_id = input("Enter your Student ID: ").strip()
+    user = Student()
+    user.start()
+    sleep(1)
+    user.login(student_id)
+    if user.session_id:
+        student_menu()
 
 
 def student_menu():
-    """Display the student menu."""
-    global user_id, user
     while True:
         print("\n--- Student Menu ---")
-        print("1. Log out")
-        print("2. Ask for exit request")
+        print("1. Submit Request")
+        print("2. Logout")
         choice = input("Choose an option: ").strip()
 
-        if choice == "1":
+        if choice == '1':
+            submit_request()
+        elif choice == '2':
             user.logout()
-            user_id = None
             break
-        elif choice == "2":
-            content = input("Enter the content of your exit request: ").strip()
-            approver_id = int(input("Enter the approver ID: ").strip())
-            user.submit_request(content=content, approver_id=approver_id)
         else:
-            print("Invalid option. Please try again.")
+            print("Invalid choice. Please try again.")
+
+
+def submit_request():
+    content = input("Enter your request content: ").strip()
+    approver_id = input("Enter the approver ID: ").strip()
+    user.submit_request(content, approver_id)
 
 
 def staff_menu():
@@ -247,4 +245,3 @@ sleep(interval)  # Allow approval to process
 student1.logout()
 student2.logout()
 staff.logout()
-

@@ -56,11 +56,16 @@ class Staff(Thread):
         """
         Register a new staff profile with the server.
         """
-        request = Request(action="signup", profile=profile)
-        encrypted_request = self.encrypt_request(RequestSerializer.encode(request))
+        request = Request(action="signup", profile=profile.to_dict(), session_key=self.session_key)
+        serialized_request = RequestSerializer.encode(request)
+        encrypted_request = self.encrypt_request(serialized_request)
         self.ss.send(encrypted_request)
-        response = self.decrypt_response(self.ss.recv(4096).decode('utf-8'))
-        print(response)
+        encrypted_response = self.ss.recv(4096)
+        if encrypted_response:
+            response = self.decrypt_response(encrypted_response)
+            print(response)
+        else:
+            print("No response received from server")
 
     def login(self, staff_id):
         """

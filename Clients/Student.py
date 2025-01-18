@@ -1,13 +1,13 @@
-from socket import *
+from socket import socket, AF_INET, SOCK_STREAM
 from threading import Thread
-from config import *
+from config import HOST, PORT
 from Actions.Request import Request, RequestSerializer
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP, AES
 from Crypto.Util.Padding import pad, unpad
 from Crypto.Random import get_random_bytes
 import base64
-
+import json
 
 class Student(Thread):
     def __init__(self):
@@ -39,18 +39,11 @@ class Student(Thread):
         """
         Decrypt the response data using AES and the session key.
         """
-        encrypted_data = base64.b64decode(encrypted_data)  # Decode from base64
-    
-        # print the encrypted data
-        print(f"Encrypted response data: {encrypted_data[:50]}...")
-    
-        iv = encrypted_data[:AES.block_size]  # Extract IV
-        encrypted_message = encrypted_data[AES.block_size:]  # Extract ciphertext
+        encrypted_data = base64.b64decode(encrypted_data)
+        iv = encrypted_data[:AES.block_size]
+        encrypted_message = encrypted_data[AES.block_size:]
         cipher = AES.new(self.session_key, AES.MODE_CBC, iv)
-        return unpad(cipher.decrypt(encrypted_message), AES.block_size).decode('utf-8')  # Return decrypted plaintext
-
-
-
+        return unpad(cipher.decrypt(encrypted_message), AES.block_size).decode('utf-8')
 
     def run(self):
         self.ss.connect((HOST, PORT))
@@ -58,37 +51,48 @@ class Student(Thread):
         print("Connected to the server as a student.")
 
     def register(self, profile):
-        request = Request(action="signup", profile=profile.to_dict())
+        session_key_encoded = base64.b64encode(self.session_key).decode('utf-8')
+        request = Request(action="signup", profile=profile.to_dict(), session_key=session_key_encoded)
         serialized_request = RequestSerializer.encode(request)
         encrypted_request = self.encrypt_request(serialized_request)
         self.ss.send(encrypted_request)
         encrypted_response = self.ss.recv(4096)
         if encrypted_response:
-            print(f"Encrypted response received: {encrypted_response}")
             response = self.decrypt_response(encrypted_response)
             print(response)
         else:
             print("No response received from server")
 
     def login(self, student_id):
-        request = Request(action="login", student_id=student_id)
-        encrypted_request = self.encrypt_request(RequestSerializer.encode(request).decode('utf-8'))
+        session_key_encoded = base64.b64encode(self.session_key).decode('utf-8')
+        request = Request(action="login", student_id=student_id, session_key=session_key_encoded)
+        serialized_request = RequestSerializer.encode(request)
+        encrypted_request = self.encrypt_request(serialized_request)
         self.ss.send(encrypted_request)
         encrypted_response = self.ss.recv(4096)
-        response = self.decrypt_response(encrypted_response)
-        print(response)
+        if encrypted_response:
+            response = self.decrypt_response(encrypted_response)
+            response_data = json.loads(response)
+            self.session_id = response_data.get("session_id")
+            print(response_data.get("message"))
+        else:
+            print("No response received from server")
 
     def logout(self):
-        request = Request(action="logout", content={"session_id": self.session_id})
-        encrypted_request = self.encrypt_request(RequestSerializer.encode(request).decode('utf-8'))
+        session_key_encoded = base64.b64encode(self.session_key).decode('utf-8')
+        request = Request(action="logout", content={"session_id": self.session_id}, session_key=session_key_encoded)
+        serialized_request = RequestSerializer.encode(request)
+        encrypted_request = self.encrypt_request(serialized_request)
         self.ss.send(encrypted_request)
         encrypted_response = self.ss.recv(4096)
         response = self.decrypt_response(encrypted_response)
         print(response)
 
     def submit_request(self, content, approver_id):
-        request = Request(action="submit_request", content=content, approver_id=approver_id, profile={"session_id": self.session_id})
-        encrypted_request = self.encrypt_request(RequestSerializer.encode(request).decode('utf-8'))
+        session_key_encoded = base64.b64encode(self.session_key).decode('utf-8')
+        request = Request(action="submit_request", content=content, approver_id=approver_id, profile={"session_id": self.session_id}, session_key=session_key_encoded)
+        serialized_request = RequestSerializer.encode(request)
+        encrypted_request = self.encrypt_request(serialized_request)
         self.ss.send(encrypted_request)
         encrypted_response = self.ss.recv(4096)
         response = self.decrypt_response(encrypted_response)
