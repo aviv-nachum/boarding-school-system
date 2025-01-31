@@ -10,6 +10,15 @@ class Staff_Profile(Profile):
         client_student_id_dict = client_student_id_dict # For staff only
         Request_ids = Request_ids # For staff only
     
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "surname": self.surname,
+            "client_student_id_dict": self.client_student_id_dict,
+            "Request_ids": self.Request_ids
+        }
+    
     def from_dict(data):
         """
         Create a Profile object from a dictionary.

@@ -52,16 +52,19 @@ class Student(Thread):
 
     def register(self, profile):
         session_key_encoded = base64.b64encode(self.session_key).decode('utf-8')
-        request = Request(action="signup", profile=profile.to_dict(), session_key=session_key_encoded)
+        request = Request(action="signupStudent", profile=profile.to_dict(), session_key=session_key_encoded)
         serialized_request = RequestSerializer.encode(request)
         encrypted_request = self.encrypt_request(serialized_request)
         self.ss.send(encrypted_request)
-        encrypted_response = self.ss.recv(4096)
-        if encrypted_response:
-            response = self.decrypt_response(encrypted_response)
-            print(response)
-        else:
-            print("No response received from server")
+        try:
+            encrypted_response = self.ss.recv(4096)
+            if encrypted_response:
+                response = self.decrypt_response(encrypted_response)
+                print(response)
+            else:
+                print("No response received from server")
+        except ConnectionAbortedError as e:
+            print(f"Connection aborted: {e}")
 
     def login(self, student_id):
         session_key_encoded = base64.b64encode(self.session_key).decode('utf-8')
@@ -69,14 +72,17 @@ class Student(Thread):
         serialized_request = RequestSerializer.encode(request)
         encrypted_request = self.encrypt_request(serialized_request)
         self.ss.send(encrypted_request)
-        encrypted_response = self.ss.recv(4096)
-        if encrypted_response:
-            response = self.decrypt_response(encrypted_response)
-            response_data = json.loads(response)
-            self.session_id = response_data.get("session_id")
-            print(response_data.get("message"))
-        else:
-            print("No response received from server")
+        try:
+            encrypted_response = self.ss.recv(4096)
+            if encrypted_response:
+                response = self.decrypt_response(encrypted_response)
+                response_data = json.loads(response)
+                self.session_id = response_data.get("session_id")
+                print(response_data.get("message"))
+            else:
+                print("No response received from server")
+        except ConnectionAbortedError as e:
+            print(f"Connection aborted: {e}")
 
     def logout(self):
         session_key_encoded = base64.b64encode(self.session_key).decode('utf-8')

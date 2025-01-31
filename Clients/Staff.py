@@ -19,7 +19,6 @@ class Staff(Thread):
         """
         Perform RSA handshake to exchange AES session keys with the server.
         """
-        # Receive the server's public key
         public_key = RSA.import_key(self.ss.recv(4096))
         cipher_rsa = PKCS1_OAEP.new(public_key)
         self.session_key = get_random_bytes(16)
@@ -32,7 +31,8 @@ class Staff(Thread):
         """
         cipher = AES.new(self.session_key, AES.MODE_CBC)
         encrypted_data = cipher.encrypt(pad(data, AES.block_size))
-        return base64.b64encode(cipher.iv + encrypted_data).decode('utf-8')
+        payload = base64.b64encode(cipher.iv + encrypted_data)
+        return payload
 
     def decrypt_response(self, encrypted_data):
         """
@@ -56,7 +56,7 @@ class Staff(Thread):
         """
         Register a new staff profile with the server.
         """
-        request = Request(action="signup", profile=profile.to_dict(), session_key=self.session_key)
+        request = Request(action="signupStaffencode", profile=profile.to_dict(), session_key=self.session_key)
         serialized_request = RequestSerializer.encode(request)
         encrypted_request = self.encrypt_request(serialized_request)
         self.ss.send(encrypted_request)

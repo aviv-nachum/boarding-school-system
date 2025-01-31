@@ -1,8 +1,8 @@
 from socket import *
 from threading import Thread, Lock
 from Actions.Request import Request, RequestSerializer
-from config import *
 from Actions.Actions import action_handlers
+from config import *
 from Profiles.Profile import Profile
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP, AES
@@ -61,22 +61,24 @@ class Server(Thread):
         self.db_connection.execute("PRAGMA journal_mode=WAL;")
         cursor = self.db_connection.cursor()
 
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS profiles (
+        cursor.execute("""CREATE TABLE IF NOT EXISTS profiles (
                 id INTEGER PRIMARY KEY,
-                serialized_profile TEXT
-            )
-        """)
+                name TEXT NOT NULL,
+                surname TEXT NOT NULL,
+                grade TEXT,
+                class_number INTEGER,
+                head_teacher_id INTEGER,
+                head_madric_id INTEGER,
+                serialized_profile TEXT NOT NULL
+            )""")
 
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS exit_requests (
+        cursor.execute("""CREATE TABLE IF NOT EXISTS exit_requests (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 student_id INTEGER,
                 content TEXT,
                 approved BOOLEAN,
                 approver_id INTEGER
-            )
-        """)
+            )""")
         self.db_connection.commit()
 
     def log(self, message):
@@ -135,12 +137,11 @@ class Server(Thread):
         while True:
             try:
                 encrypted_request = conn.recv(4096)
-                #print(encrypted_request)
                 if not encrypted_request:
                     self.log("Client disconnected.")
                     break
 
-                decrypted_request = self.decrypt_request(encrypted_request.decode('utf-8'), session_key)
+                decrypted_request = self.decrypt_request(encrypted_request, session_key)
                 request = RequestSerializer.decode_raw(decrypted_request)  # Adjusted decode method
 
                 # Ensure session_key is bytes
@@ -152,21 +153,15 @@ class Server(Thread):
 
                 self.log(f"Received action '{request.action}' from client.")
 
-                if request.action == "signup":
-                    print(f"Processing registration for profile ID: {request.profile['id']}")
-                    # Perform registration logic here
-                    print(f"Registration successful for profile ID: {request.profile['id']}")
-                    response = "Registration successful"
-                elif request.action == "login":
-                    print(f"Received action '{request.action}' from client.")
-                    print(f"Processing login for student ID: {request.student_id}")
-                    # Perform login logic here
-                    session_id = "some_unique_session_id"  # Generate or retrieve the session ID
-                    response = {"message": "Login successful", "session_id": session_id}
-                    response = json.dumps(response)
+                # Handle the request using the appropriate handler
+                action_handler_class = action_handlers.get(request.action)
+                if action_handler_class:
+                    handler = action_handler_class(self, conn, thread_cursor, thread_db_conn)
+                    handler.handle_action(request)
+                    response = "Action successful"
                 else:
-                    response = "Unknown action"
-
+                    response = f"Unknown action: {request.action}"
+                
                 # Encrypt and send the response
                 encrypted_response = self.encrypt_response(response, request.session_key)
                 conn.send(encrypted_response)
@@ -189,33 +184,28 @@ def reset_database():
     cursor.execute("DROP TABLE IF EXISTS staff")
 
     # Create tables
-    cursor.execute('''
-        CREATE TABLE profiles (
+    cursor.execute('''CREATE TABLE profiles (
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
             surname TEXT NOT NULL,
             grade TEXT,
             class_number INTEGER,
             head_teacher_id INTEGER,
-            head_madric_id INTEGER
-        )
-    ''')
+            head_madric_id INTEGER,
+            serialized_profile TEXT NOT NULL
+        )''')
 
-    cursor.execute('''
-        CREATE TABLE students (
+    cursor.execute('''CREATE TABLE students (
             id INTEGER PRIMARY KEY,
             profile_id INTEGER,
             FOREIGN KEY (profile_id) REFERENCES profiles (id)
-        )
-    ''')
+        )''')
 
-    cursor.execute('''
-        CREATE TABLE staff (
+    cursor.execute('''CREATE TABLE staff (
             id INTEGER PRIMARY KEY,
             profile_id INTEGER,
             FOREIGN KEY (profile_id) REFERENCES profiles (id)
-        )
-    ''')
+        )''')
 
     connection.commit()
     connection.close()

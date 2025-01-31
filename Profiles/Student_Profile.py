@@ -12,6 +12,17 @@ class Student_Profile(Profile):
         self.head_teacher_id = head_teacher_id  # For students only
         self.head_madric_id = head_madric_id  # For students only
     
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "surname": self.surname,
+            "grade": self.grade,
+            "class_number": self.class_number,
+            "head_teacher_id": self.head_teacher_id,
+            "head_madric_id": self.head_madric_id
+        }
+    
     def from_dict(data):
         """
         Create a Profile object from a dictionary.

@@ -48,6 +48,10 @@ def register_student():
     user.register(profile)
     print("Student registered successfully.")
 
+    user.login(id)
+    if user.session_id:
+        student_menu()
+
 
 def register_staff():
     """Register a new staff member."""
@@ -72,6 +76,10 @@ def register_staff():
 
     user.register(profile)
     print("Staff registered successfully.")
+
+    user.login(id)
+    if user.session_id:
+        staff_menu()
 
 
 def main_menu():
@@ -108,6 +116,17 @@ def login_student():
     user.login(student_id)
     if user.session_id:
         student_menu()
+
+def login_staff():
+    global user
+    print("\n--- Log in as Staff ---")
+    staff_id = input("Enter your Staff ID: ").strip()
+    user = Staff()
+    user.start()
+    sleep(1)
+    user.login(staff_id)
+    if user.session_id:
+        staff_menu()
 
 
 def student_menu():
