@@ -5,6 +5,7 @@ from Crypto.Random import get_random_bytes
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
 from Crypto.Util.Padding import pad, unpad
+import base64
 
 # examples for using keys
 rsakey = RSA.generate(2048)
@@ -40,7 +41,10 @@ class Connection:
     def recvall(self, size: int) -> bytes:
         ans = b""
         while len(ans) < size:
-            ans += self.conn.recv(size - len(ans))
+            chunk = self.conn.recv(size - len(ans))
+            if not chunk:
+                raise IOError("Connection closed before receiving expected data.")
+            ans += chunk
 
         return ans
 
@@ -74,7 +78,9 @@ class ServerEncConnection(Connection):
             host (str): the host to connect to
             port (int): the port to connect to
         """
-        ...
+        super().__init__(host, port)
+        self.session_key = None
+        self.rsa_key = RSA.import_key(open("private.pem").read())
 
     def send_msg(self, data: bytes):
         """
@@ -83,7 +89,10 @@ class ServerEncConnection(Connection):
         Args:
             data (bytes): the data to send
         """
-        ...
+        cipher = AES.new(self.session_key, AES.MODE_CBC)
+        encrypted_data = cipher.encrypt(pad(data, AES.block_size))
+        payload = base64.b64encode(cipher.iv + encrypted_data)
+        self.conn.sendall(payload)
 
     def recv_msg(self) -> bytes:
         """
@@ -92,14 +101,22 @@ class ServerEncConnection(Connection):
         Returns:
             bytes: the plaintext
         """
-        ...
+        encrypted_data = base64.b64decode(self.recvall(4096))
+        iv = encrypted_data[:AES.block_size]
+        encrypted_message = encrypted_data[AES.block_size:]
+        cipher = AES.new(self.session_key, AES.MODE_CBC, iv)
+        return unpad(cipher.decrypt(encrypted_message), AES.block_size)
 
     def start(self):
         """
         perform the handshake at the start of the connection
         receive and decrypt the RSA-encrypted AES key from the client
         """
-        ...
+        public_key = RSA.import_key(self.conn.recv(4096))
+        cipher_rsa = PKCS1_OAEP.new(public_key)
+        self.session_key = get_random_bytes(16)
+        encrypted_session_key = cipher_rsa.encrypt(self.session_key)
+        self.conn.send(encrypted_session_key)
 
 
 class ClientEncConnection(Connection):

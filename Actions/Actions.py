@@ -1,10 +1,8 @@
 from Actions.Request import Request, RequestSerializer
-from Profiles.Profile import Profile
+from Clients.User import User
 from Profiles.Staff_Profile import Staff_Profile
 from Profiles.Student_Profile import Student_Profile
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad, unpad
-import base64
+from db_manager import store_in_DB, get_user
 
 # Dictionary to map actions to their corresponding handler methods
 action_handlers = {}
@@ -34,18 +32,13 @@ class ProcessRegisterStudent:
         self.server.log(f"Processing registration for profile ID: {profile.id}")
 
         # Check if the ID already exists
-        self.cursor.execute("SELECT id FROM profiles WHERE id = ?", (profile.id,))
-        if self.cursor.fetchone():
+        if get_user(profile.id):
             self.server.log(f"Registration failed: ID {profile.id} already exists.")
             response = Request(action="signup_response", content="Registration failed: ID already exists.")
         else:
-            # Serialize the profile and store it in the database
-            serialized_profile = Profile.encode(profile).decode('utf-8')
-            self.cursor.execute("""
-                INSERT INTO profiles (id, name, surname, grade, class_number, head_teacher_id, head_madric_id, serialized_profile)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (profile.id, profile.name, profile.surname, profile.grade, profile.class_number, profile.head_teacher_id, profile.head_madric_id, serialized_profile))
-            self.db_conn.commit()
+            # Store the profile in the database
+            user = User(username=profile.id, password=request.profile['password'], role="student", profile=profile)
+            store_in_DB(user)
             self.server.log(f"Registration successful for profile ID: {profile.id}")
             response = Request(action="signup_response", content="Registration successful.")
 
@@ -75,18 +68,13 @@ class ProcessRegisterStaff:
         self.server.log(f"Processing registration for profile ID: {profile.id}")
 
         # Check if the ID already exists
-        self.cursor.execute("SELECT id FROM profiles WHERE id = ?", (profile.id,))
-        if self.cursor.fetchone():
+        if get_user(profile.id):
             self.server.log(f"Registration failed: ID {profile.id} already exists.")
             response = Request(action="signup_response", content="Registration failed: ID already exists.")
         else:
-            # Serialize the profile and store it in the database
-            serialized_profile = Profile.encode(profile).decode('utf-8')
-            self.cursor.execute("""
-                INSERT INTO profiles (id, name, surname, position, serialized_profile)
-                VALUES (?, ?, ?, ?, ?)
-            """, (profile.id, profile.name, profile.surname, profile.position, serialized_profile))
-            self.db_conn.commit()
+            # Store the profile in the database
+            user = User(username=profile.id, password=request.profile['password'], role="staff", profile=profile)
+            store_in_DB(user)
             self.server.log(f"Registration successful for profile ID: {profile.id}")
             response = Request(action="signup_response", content="Registration successful.")
 
@@ -112,11 +100,9 @@ class ProcessLogin:
         self.db_conn = db_conn
 
     def handle_action(self, request):
-        self.cursor.execute("SELECT serialized_profile FROM profiles WHERE id = ?", (request.student_id,))
-        result = self.cursor.fetchone()
-        if result:
-            profile = Profile.decode(result[0].encode('utf-8'))
-            self.conn.sendall(RequestSerializer.encode(Request(action="login_response", content="Login successful.", profile=profile.to_dict())))
+        user = get_user(request.student_id)
+        if user:
+            self.conn.sendall(RequestSerializer.encode(Request(action="login_response", content="Login successful.", profile=user.profile.to_dict())))
         else:
             self.conn.sendall(RequestSerializer.encode(Request(action="login_response", content="Login failed: User not found.")))
 

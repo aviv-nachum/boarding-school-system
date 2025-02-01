@@ -1,14 +1,12 @@
 from socket import socket
 import json
 from typing import Any
-from AuthDB import User, store_in_DB, remove_from_DB, get_user
-from encConnection import ServerEncConnection
+from Clients.User import User
+from db_manager import get_user, store_in_DB, remove_from_DB
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 import base64
-from icecream import ic
-
 import jwt
 
 permissions: dict[str, list[str]] = {
@@ -37,11 +35,11 @@ class Handler:
             conn (socket): A socket connection to the client.
         """
         self.conn = conn
-        self.active_user: User | None = None
-        self.active_user_name: str | None = None
+        self.active_user: User | None = None # the active user from type User
+        self.active_user_name: str | None = None 
         self.active_role: list[str] = ["guest"]
-        with open("Templates_Ex/sign_rsa_privatekey", "rb") as key_file:
-            self.sign_rsa_key = RSA.import_key(key_file.read())
+        with open("Templates_Ex/sign_rsa_privatekey", "rb") as key_file: # opens and closes the file as a binary file
+            self.sign_rsa_key = RSA.import_key(key_file.read()) # imports the key from the file to the sign_rsa_key
 
     def recvall(self, length: int) -> bytes:
         """
@@ -132,6 +130,18 @@ class Handler:
 
         elif action == "remove_user":
             self.handle_remove_user(req)
+            
+        elif action == "logout":
+            self.handle_logout(req)
+            
+        elif action == "submit_request":
+            self.handle_submit_request(req)
+            
+        elif action == "approve_request":
+            self.handle_approve_request(req)
+            
+        elif action == "view_requests":
+            self.handle_view_requests(req)
 
     def handle_signup(self, req: dict[str, Any]):
         """
