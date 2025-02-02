@@ -8,6 +8,7 @@ from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP, AES
 from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import pad, unpad
+from db_manager import reset_database
 import base64
 import sqlite3
 import time
@@ -173,39 +174,3 @@ class Server(Thread):
         conn.close()
         thread_db_conn.close()
         self.log("Client handler thread terminated.")
-
-def reset_database():
-    connection = sqlite3.connect('Database/system.db')
-    cursor = connection.cursor()
-
-    # Drop tables if they exist
-    cursor.execute("DROP TABLE IF EXISTS profiles")
-    cursor.execute("DROP TABLE IF EXISTS students")
-    cursor.execute("DROP TABLE IF EXISTS staff")
-
-    # Create tables
-    cursor.execute('''CREATE TABLE profiles (
-            id INTEGER PRIMARY KEY,
-            name TEXT NOT NULL,
-            surname TEXT NOT NULL,
-            grade TEXT,
-            class_number INTEGER,
-            head_teacher_id INTEGER,
-            head_madric_id INTEGER,
-            serialized_profile TEXT NOT NULL
-        )''')
-
-    cursor.execute('''CREATE TABLE students (
-            id INTEGER PRIMARY KEY,
-            profile_id INTEGER,
-            FOREIGN KEY (profile_id) REFERENCES profiles (id)
-        )''')
-
-    cursor.execute('''CREATE TABLE staff (
-            id INTEGER PRIMARY KEY,
-            profile_id INTEGER,
-            FOREIGN KEY (profile_id) REFERENCES profiles (id)
-        )''')
-
-    connection.commit()
-    connection.close()
