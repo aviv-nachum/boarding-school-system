@@ -8,16 +8,13 @@ import datetime
 
 
 permissions: dict[str, list[str]] = {
-    "signup": ["guest", "user", "admin"],
+    "signup": ["guest", "student", "staff"],
     "login": ["guest"],
-    "remove_user": ["admin"],
-    "logout": ["user", "admin"],
-    "user_create_task": ["user", "admin"],
-    "group_create_task":["user", "admin"],
-    "edit_username":["user", "admin"],
-    "return_tasks": ["user", "admin"],
-    "join_group": ["user, admin"],
-    
+    "remove_user": ["staff"],
+    "logout": ["student", "staff"],
+    "submit_request": ["student"],
+    "approve_request": ["staff"],
+    "view_requests": ["staff"],
 }
 
 
@@ -59,17 +56,14 @@ class Handler:
         elif action == "logout":
             self.handle_logout(req)
 
-        elif action == "user_create_task":
-            self.handle_user_create_task(req)
+        elif action == "submit_request":
+            self.handle_submit_request(req)
 
-        elif action == "return_tasks":
-            self.handle_return_task_list()
+        elif action == "approve_request":
+            self.handle_approve_request(req)
 
-        elif action == "join_group":
-            self.handle_join_group(req)
-
-        elif action =="change_group_code":
-            self.handle_change_group_code()
+        elif action == "view_requests":
+            self.handle_view_requests(req)
 
     def handle_signup(self, req: dict[str, Any]):
         """
@@ -210,58 +204,30 @@ class Handler:
         encCookie=jwt.encode(cookie, self.key , algorithm="HS256")
         self.conn.send_msg(encCookie.encode("utf-8"))
 
-    def handle_user_create_task(self, req: dict[str, Any]):
+    def handle_submit_request(self, req: dict[str, Any]):
         """
-        Handle requests to create a user task.
+        Handle requests to submit an exit request from student.
 
         Args:
-            req (dict[str, Any]): The request data containing "task_setting".
+            req (dict[str, Any]): The request data containing "".
         """
-        if not "task_setting" in req:
-            print("Missing task settings")
-        setting=req.get("task_setting", None)
-        task=self.api.create_task(setting.get("name",None))
-        if task:
-            self.api.add_task_to_user(task, self.active_user)
-        else: return "Task already exists"
+        pass
 
-    def handle_return_task_list(self):
+    def handle_approve_request(self, req: dict[str, Any]):
         """
-        Handle requests to get a user task list.
+        Handle requests to approve exit requests by the exit request id.
 
         Returns:
-            List of current user tasks.
+            req (dict[str, Any]): The request data containing "".
         """
-        tasks=self.api.retrive_tasks(self.active_user)
-        if tasks:
-            data=json.dumps(tasks)
-            self.conn.send_msg(data.encode("utf-8"))
-            return
-        raise Exception("No Data to show")
+        pass
     
-    def handle_join_group(self, req: dict[str, Any]):
+    def handle_view_requests(self, req: dict[str, Any]):
         """
-        Handle requests to join group.
+        Handle requests to view exit requests that have the staff as their approver id.
 
         Args:
-            req (dict[str, Any]): The request data containing "code".
+            req (dict[str, Any]): The request data containing "".
         """
-        if not "code" in req:
-            print("Missing code value")
-        code=req.get("code", None)
-        self.api.add_user_to_grp(self.active_user, code)
-        return
-    
-    def handle_change_group_code(self):
-        """
-        Handle requests to change group code.
-
-        Returns:
-            req (dict[str, Any]): The request data containing "code".
-        """
-        if not "code" in req:
-            print("Missing code value")
-        code=req.get("code", None)
-        self.api.add_user_to_grp(self.active_user, code)
-        return
+        pass
         

@@ -1,38 +1,18 @@
-from socket import socket, AF_INET, SOCK_STREAM
+from socket import socket
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.Random import get_random_bytes
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
 from Crypto.Util.Padding import pad, unpad
-import base64
-
-# examples for using keys
-rsakey = RSA.generate(2048)
-rsakey_data = rsakey.export_key()
-rsakey_pub_data = rsakey.public_key().export_key()
-with open("enc_rsa_privatekey", "wb") as key_file:
-    key_file.write(rsakey_data)
-
-with open("enc_rsa_pubkey.pem", "wb") as key_file:
-    key_file.write(rsakey_pub_data)
-
-rsakey = RSA.generate(2048)
-rsakey_data = rsakey.export_key()
-rsakey_pub_data = rsakey.public_key().export_key()
-with open("Templates_Ex/sign_rsa_privatekey", "wb") as key_file:
-    key_file.write(rsakey_data)
-
-with open("Templates_Ex/sign_rsa_pubkey.pem", "wb") as key_file:
-    key_file.write(rsakey_pub_data)
 
 
 class Connection:
 
-    def __init__(self, host: str, port: int):
+    def __init__(self, host: str, port: int, conn: socket):
         self.host = host
         self.port = port
-        self.conn = socket(AF_INET, SOCK_STREAM)
+        self.conn = conn
 
     def sendall(self, data: bytes):
         """send the bytes over socket"""
@@ -41,11 +21,7 @@ class Connection:
     def recvall(self, size: int) -> bytes:
         ans = b""
         while len(ans) < size:
-            chunk = self.conn.recv(size - len(ans))
-            if not chunk:
-                raise IOError("Connection closed before receiving expected data.")
-            ans += chunk
-
+            ans += self.conn.recv(size - len(ans))
         return ans
 
     def send_msg(self, msg: bytes):
@@ -70,7 +46,7 @@ class Connection:
 
 class ServerEncConnection(Connection):
 
-    def __init__(self, host, port):
+    def __init__(self, host, port, conn):
         """
         initiate the network connection and import the RSA private key
 
@@ -78,9 +54,11 @@ class ServerEncConnection(Connection):
             host (str): the host to connect to
             port (int): the port to connect to
         """
-        super().__init__(host, port)
-        self.session_key = None
-        self.rsa_key = RSA.import_key(open("private.pem").read())
+        Connection.__init__(self, host, port, conn)
+        with open("enc_rsa_privatekey", "rb") as key_file:
+            self.rsa_key = RSA.import_key(key_file.read())
+        self.aes_key=b""
+        ...
 
     def send_msg(self, data: bytes):
         """
@@ -89,10 +67,11 @@ class ServerEncConnection(Connection):
         Args:
             data (bytes): the data to send
         """
-        cipher = AES.new(self.session_key, AES.MODE_CBC)
-        encrypted_data = cipher.encrypt(pad(data, AES.block_size))
-        payload = base64.b64encode(cipher.iv + encrypted_data)
-        self.conn.sendall(payload)
+        iv = get_random_bytes(16)
+        aes_cipher = AES.new(self.aes_key,AES.MODE_CBC,iv=iv)
+        enc_msg = aes_cipher.encrypt(pad(data,16))
+        self.sendall(int.to_bytes(len(iv+enc_msg), 4, "big"))
+        self.sendall(iv+enc_msg)        
 
     def recv_msg(self) -> bytes:
         """
@@ -101,27 +80,27 @@ class ServerEncConnection(Connection):
         Returns:
             bytes: the plaintext
         """
-        encrypted_data = base64.b64decode(self.recvall(4096))
-        iv = encrypted_data[:AES.block_size]
-        encrypted_message = encrypted_data[AES.block_size:]
-        cipher = AES.new(self.session_key, AES.MODE_CBC, iv)
-        return unpad(cipher.decrypt(encrypted_message), AES.block_size)
+        length = int.from_bytes(self.recvall(4), "big")
+        data = self.recvall(length)
+        iv = data[:16]
+        ciphertext = data[16:]
+        aes_cipher = AES.new(self.aes_key, AES.MODE_CBC, iv=iv)
+        msg = aes_cipher.decrypt(ciphertext)
+        return unpad(msg,16)
 
     def start(self):
         """
         perform the handshake at the start of the connection
         receive and decrypt the RSA-encrypted AES key from the client
         """
-        public_key = RSA.import_key(self.conn.recv(4096))
-        cipher_rsa = PKCS1_OAEP.new(public_key)
-        self.session_key = get_random_bytes(16)
-        encrypted_session_key = cipher_rsa.encrypt(self.session_key)
-        self.conn.send(encrypted_session_key)
-
+        length = int.from_bytes(self.recvall(4), "big")
+        enc_key = self.recvall(length)
+        rsa_cipher = PKCS1_OAEP.new(self.rsa_key)
+        self.aes_key = rsa_cipher.decrypt(enc_key)        
 
 class ClientEncConnection(Connection):
 
-    def __init__(self, host, port):
+    def __init__(self, host, port, conn):
         """
         initiate the network connection and import the RSA public key of the server
 
@@ -129,7 +108,10 @@ class ClientEncConnection(Connection):
             host (str): the host to connect to
             port (int): the port to connect to
         """
-        ...
+        Connection.__init__(self,host,port, conn)
+        with open ("enc_rsa_pubkey.pem", "rb") as key_file:
+            self.pub_rsa_key = RSA.import_key(key_file.read())
+        self.aes_key=b""
 
     def send_msg(self, data: bytes):
         """
@@ -138,7 +120,11 @@ class ClientEncConnection(Connection):
         Args:
             data (bytes): the data to send
         """
-        ...
+        iv = get_random_bytes(16)
+        aes_cipher = AES.new(self.aes_key,AES.MODE_CBC,iv=iv)
+        enc_msg = aes_cipher.encrypt(pad(data,16))
+        self.sendall(int.to_bytes(len(iv+enc_msg), 4, "big"))
+        self.sendall(iv+enc_msg)  
 
     def recv_msg(self) -> bytes:
         """
@@ -147,11 +133,21 @@ class ClientEncConnection(Connection):
         Returns:
             bytes: the plaintext
         """
-        ...
+        length = int.from_bytes(self.recvall(4), "big")
+        data = self.recvall(length)
+        iv=data[:16]
+        ciphertext=data[16:]
+        aes_cipher = AES.new(self.aes_key, AES.MODE_CBC, iv=iv)
+        msg = aes_cipher.decrypt(ciphertext)
+        return unpad(msg,16)
 
     def start(self):
         """
         perform the handshake at the start of the connection
         generate an AES key, encrypt it with the RSA public key of the server and send it to the server
         """
-        ...
+        self.aes_key = get_random_bytes(16)
+        rsa_cipher = PKCS1_OAEP.new(self.pub_rsa_key)
+        enc_key = rsa_cipher.encrypt(self.aes_key)
+        self.sendall(int.to_bytes(len(enc_key), 4, "big"))
+        self.sendall(enc_key)
