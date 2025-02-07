@@ -1,7 +1,7 @@
 import json
 import socket
 from typing import Any
-from encConnection import ServerEncConnection
+from template_classes.encConnection import ServerEncConnection
 import jwt
 from server import API
 import datetime
@@ -205,29 +205,25 @@ class Handler:
         self.conn.send_msg(encCookie.encode("utf-8"))
 
     def handle_submit_request(self, req: dict[str, Any]):
-        """
-        Handle requests to submit an exit request from student.
-
-        Args:
-            req (dict[str, Any]): The request data containing "".
-        """
-        pass
+        try:
+            # Add database operations
+            self.api.submit_request(req["content"], req["approver_id"])
+            self.conn.send_msg(json.dumps({"status": "success"}).encode())
+        except Exception as e:
+            self.conn.send_msg(json.dumps({"status": "error", "desc": str(e)}).encode())
 
     def handle_approve_request(self, req: dict[str, Any]):
-        """
-        Handle requests to approve exit requests by the exit request id.
+        try:
+            # Add approval logic
+            self.api.approve_request(req["request_id"])
+            self.conn.send_msg(json.dumps({"status": "success"}).encode())
+        except Exception as e:
+            self.conn.send_msg(json.dumps({"status": "error", "desc": str(e)}).encode())
 
-        Returns:
-            req (dict[str, Any]): The request data containing "".
-        """
-        pass
-    
     def handle_view_requests(self, req: dict[str, Any]):
-        """
-        Handle requests to view exit requests that have the staff as their approver id.
-
-        Args:
-            req (dict[str, Any]): The request data containing "".
-        """
-        pass
+        try:
+            requests = self.api.get_requests(req["approver_id"])
+            self.conn.send_msg(json.dumps({"status": "success", "requests": requests}).encode())
+        except Exception as e:
+            self.conn.send_msg(json.dumps({"status": "error", "desc": str(e)}).encode())
         

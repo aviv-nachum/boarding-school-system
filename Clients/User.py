@@ -6,12 +6,14 @@ from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP, AES
 from Crypto.Util.Padding import pad, unpad
 from Crypto.Random import get_random_bytes
+from template_classes.encConnection import ClientEncConnection
 import base64
 import json
 
 class User(Thread):
     def __init__(self, username, password, role, profile):
         super().__init__()
+        self.connection = ClientEncConnection(HOST, PORT, socket())
         self.username = username
         self.password = password
         self.role = role
@@ -25,6 +27,12 @@ class User(Thread):
 
     def check_password(self, password):
         return self.password == password
+    
+    def send_request(self, request):
+        self.connection.send_msg(RequestSerializer.encode(request))
+        
+    def receive_response(self):
+        return RequestSerializer.decode(self.connection.recv_msg())
 
     def rsa_handshake(self):
         """
@@ -56,6 +64,8 @@ class User(Thread):
         return unpad(cipher.decrypt(encrypted_message), AES.block_size).decode('utf-8')
 
     def run(self):
+        self.connection.connect()
+        self.connection.start()
         self.ss.connect((HOST, PORT))
         self.rsa_handshake()
         print(f"Connected to the server as {self.role}.")

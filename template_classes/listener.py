@@ -1,7 +1,7 @@
 from socket import socket, AF_INET, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
 import threading
 from threading import Thread
-from handler import Handler
+from template_classes.handler import Handler
 
 
 class Listener:
