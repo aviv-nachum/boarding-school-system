@@ -5,6 +5,18 @@ from Crypto.Random import get_random_bytes
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
 from Crypto.Util.Padding import pad, unpad
+import base64
+import os
+
+# Generate RSA keys if they don't exist
+if not os.path.exists("enc_rsa_privkey.pem") or not os.path.exists("enc_rsa_pubkey.pem"):
+    key = RSA.generate(2048)
+    private_key = key.export_key()
+    public_key = key.publickey().export_key()
+    with open("enc_rsa_privkey.pem", "wb") as priv_file:
+        priv_file.write(private_key)
+    with open("enc_rsa_pubkey.pem", "wb") as pub_file:
+        pub_file.write(public_key)
 
 
 class Connection:

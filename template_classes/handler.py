@@ -3,7 +3,7 @@ import socket
 from typing import Any
 from template_classes.encConnection import ServerEncConnection
 import jwt
-from server import API
+from template_classes.API import API
 import datetime
 
 
@@ -101,7 +101,7 @@ class Handler:
             active_email = cookie["email"]
             self.active_user = self.api.get_user(active_email) #API REF
             if self.active_user:
-                self.active_role = self.api.check_role(self.active_user)
+                self.active_role = self.active_user.role
         except (jwt.exceptions.DecodeError, jwt.exceptions.InvalidSignatureError, jwt.exceptions.InvalidTokenError, jwt.exceptions.ExpiredSignatureError) as e:
             print(f"Cookie error: {e}")
 
@@ -206,24 +206,33 @@ class Handler:
 
     def handle_submit_request(self, req: dict[str, Any]):
         try:
-            # Add database operations
-            self.api.submit_request(req["content"], req["approver_id"])
+            self.cursor.execute("""
+                INSERT INTO exit_requests (student_id, content, approved, approver_id)
+                VALUES (?, ?, ?, ?)
+            """, (req["student_id"], req["content"], False, req["approver_id"]))
+            self.db_conn.commit()
             self.conn.send_msg(json.dumps({"status": "success"}).encode())
         except Exception as e:
             self.conn.send_msg(json.dumps({"status": "error", "desc": str(e)}).encode())
 
     def handle_approve_request(self, req: dict[str, Any]):
         try:
-            # Add approval logic
-            self.api.approve_request(req["request_id"])
+            self.cursor.execute("""
+                UPDATE exit_requests SET approved = 1 WHERE id = ?
+            """, (req["request_id"],))
+            self.db_conn.commit()
             self.conn.send_msg(json.dumps({"status": "success"}).encode())
         except Exception as e:
             self.conn.send_msg(json.dumps({"status": "error", "desc": str(e)}).encode())
 
     def handle_view_requests(self, req: dict[str, Any]):
         try:
-            requests = self.api.get_requests(req["approver_id"])
-            self.conn.send_msg(json.dumps({"status": "success", "requests": requests}).encode())
+            self.cursor.execute("""
+                SELECT * FROM exit_requests WHERE approver_id = ?
+            """, (req["approver_id"],))
+            requests = self.cursor.fetchall()
+            response = [{"id": r[0], "student_id": r[1], "content": r[2], "approved": bool(r[3])} 
+                       for r in requests]
+            self.conn.send_msg(json.dumps(response).encode())
         except Exception as e:
             self.conn.send_msg(json.dumps({"status": "error", "desc": str(e)}).encode())
-        
