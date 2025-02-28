@@ -37,7 +37,9 @@ def register_student():
         grade=grade,
         class_number=class_number,
         head_teacher_id=head_teacher_id,
-        head_madric_id=head_madric_id
+        head_madric_id=head_madric_id,
+        password=password,
+        role="student"
     )
 
     user = Student(id, password, profile)
@@ -77,7 +79,9 @@ def register_staff():
         id=staff_id,
         name=name,
         surname=surname,
-        position=position
+        position=position,
+        password=password,
+        role="staff"
     )
 
     user = Staff(staff_id, password, profile)

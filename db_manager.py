@@ -1,11 +1,10 @@
 import os
-from config import HOST, PORT
-from Clients.User import User
-from Profiles.Profile import Profile
-from Profiles.Staff_Profile import Staff_Profile
-from Profiles.Student_Profile import Student_Profile
 import sqlite3
 import json
+from Profiles.Staff_Profile import Staff_Profile
+from Profiles.Student_Profile import Student_Profile
+from Clients.User import User
+from Profiles.Profile import Profile
 
 def store_in_DB(user):
     connection = sqlite3.connect('Database/system.db')
@@ -15,13 +14,13 @@ def store_in_DB(user):
         cursor.execute("""
             INSERT INTO users (username, password, role, profile)
             VALUES (?, ?, ?, ?)
-        """, (user.username, user.password, user.role, json.dumps(user.profile.to_dict())))
+        """, (user.username, user.password, user.role, json.dumps(user.profile)))
         connection.commit()
     except sqlite3.IntegrityError as e:
         print(f"Error storing user in DB: {e}")
     finally:
         connection.close()
-        
+
 def remove_from_DB(username):
     connection = sqlite3.connect('Database/system.db')
     cursor = connection.cursor()
@@ -48,7 +47,7 @@ def get_user(username):
             elif user_data[2] == "staff":
                 profile = Staff_Profile.from_dict(profile_data)
             else:
-                profile = Profile.from_dict(profile_data)
+                profile = None
             return User(username=user_data[0], password=user_data[1], role=user_data[2], profile=profile)
         else:
             return None

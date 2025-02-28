@@ -5,8 +5,8 @@ class Student_Profile(Profile):
     """
     Represents a profile for students only.
     """
-    def __init__(self, id, name, surname, grade, class_number, head_teacher_id, head_madric_id):
-        super().__init__(id,name,surname)
+    def __init__(self, id, name, surname, password, role, grade, class_number, head_teacher_id, head_madric_id):
+        super().__init__(id,name,surname, password, role)
         self.grade = grade  # For students only
         self.class_number = class_number  # For students only
         self.head_teacher_id = head_teacher_id  # For students only
@@ -17,6 +17,8 @@ class Student_Profile(Profile):
             "id": self.id,
             "name": self.name,
             "surname": self.surname,
+            "password": self.password,
+            "role": self.role,
             "grade": self.grade,
             "class_number": self.class_number,
             "head_teacher_id": self.head_teacher_id,

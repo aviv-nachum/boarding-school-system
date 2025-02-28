@@ -4,10 +4,12 @@ class Profile:
     """
     Represents a profile for staff members and students.
     """
-    def __init__(self, id, name, surname):
+    def __init__(self, id, name, surname, password, role):
         self.id = id
         self.name = name
         self.surname = surname
+        self.password = password
+        self.role = role
 
 
     def to_dict(self):

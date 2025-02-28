@@ -1,9 +1,4 @@
-import struct
 import json
-import logging
-import base64
-
-# filepath: c:\Users\Kids\Documents\GitHub\boarding-school-system\Actions\Request.py
 
 class Request:
     """

@@ -5,15 +5,18 @@ class API:
     def __init__(self):
         pass
 
-    def sign_up(self, username, password):
-        user = User(username=username, password=password, role="guest", profile=None)
+    def sign_up(self, username, password, role, profile):
+        print(f"Signing up user: {username}, role: {role}")
+        user = User(username=username, password=password, role=role, profile=profile)
         store_in_DB(user)
 
     def get_user(self, username):
+        print(f"Getting user: {username}")
         return get_user(username)
 
-    def delete_user(self, user):
-        remove_from_DB(user.username)
+    def delete_user(self, username):
+        print(f"Deleting user: {username}")
+        remove_from_DB(username)
 
     def check_password(self, user, password):
         return user.check_password(password)

@@ -1,173 +1,142 @@
-from Actions.Request import Request, RequestSerializer
-from Clients.User import User
-from Profiles.Staff_Profile import Staff_Profile
-from Profiles.Student_Profile import Student_Profile
-from db_manager import store_in_DB, get_user
+from template_classes.API import API
+import json
+import sqlite3
 
-# Dictionary to map actions to their corresponding handler methods
+api = API()
+
 action_handlers = {}
 
-# Decorator for client handler functions
-def client_action(cls):
-    """
-    Register the class's handle_action method to the action_handlers dictionary.
-    """
-    action_name = cls.action_name
-    if action_name:
-        action_handlers[action_name] = cls
-    return cls
+def action_handler(action_name):
+    def decorator(func):
+        action_handlers[action_name] = func
+        return func
+    return decorator
 
-@client_action
-class ProcessRegisterStudent:
-    action_name = "signupStudent"
+@action_handler("signupStudent")
+def signup_student(handler, req):
+    print("Handling signupStudent action...")
+    profile = req.get("profile", None)
+    username = profile.get("name", None)
+    password = profile.get("password", None)
+    print(profile, username, password)
+    if not username or not password or not profile:
+        print("Missing required fields for signupStudent.")
+        return
+    api.sign_up(username, password, "student", profile)
+    cookie = handler.create_cookie(username)
+    handler.conn.send_msg(json.dumps({"status": "success", "message": "Student registered successfully", "cookie": cookie}).encode('utf-8'))
 
-    def __init__(self, server, conn, cursor, db_conn):
-        self.server = server
-        self.conn = conn
-        self.cursor = cursor
-        self.db_conn = db_conn
+@action_handler("signupStaff")
+def signup_staff(handler, req):
+    print("Handling signupStaff action...")
+    username = req.get("username", None)
+    password = req.get("password", None)
+    profile = req.get("profile", None)
+    if not username or not password or not profile:
+        print("Missing required fields for signupStaff.")
+        return
+    api.sign_up(username, password, "staff", profile)
+    handler.conn.send_msg(json.dumps({"status": "success", "message": "Staff registered successfully"}).encode('utf-8'))
 
-    def handle_action(self, request):
-        profile = Student_Profile.from_dict(request.profile)
-        self.server.log(f"Processing registration for profile ID: {profile.id}")
+@action_handler("login")
+def login(handler, req):
+    print("Handling login action...")
+    username = req.get("username", None)
+    password = req.get("password", None)
+    if not username or not password:
+        print("Missing required fields for login.")
+        return
+    user = api.get_user(username)
+    if not user:
+        print("Invalid username or password.")
+        handler.conn.send_msg(json.dumps({"status": "error", "message": "Invalid username or password"}).encode('utf-8'))
+        return
+    if not api.check_password(user, password):
+        print("Invalid username or password.")
+        handler.conn.send_msg(json.dumps({"status": "error", "message": "Invalid username or password"}).encode('utf-8'))
+        return
+    cookie = handler.create_cookie(username)
+    handler.conn.send_msg(json.dumps({"status": "success", "message": "Login successful", "cookie": cookie}).encode('utf-8'))
 
-        # Check if the ID already exists
-        if get_user(profile.id):
-            self.server.log(f"Registration failed: ID {profile.id} already exists.")
-            response = Request(action="signup_response", content="Registration failed: ID already exists.")
-        else:
-            # Store the profile in the database
-            user = User(username=profile.id, password=request.profile['password'], role="student", profile=profile)
-            store_in_DB(user)
-            self.server.log(f"Registration successful for profile ID: {profile.id}")
-            response = Request(action="signup_response", content="Registration successful.")
+@action_handler("remove_user")
+def remove_user(handler, req):
+    print("Handling remove_user action...")
+    username = req.get("username", None)
+    if not username:
+        print("Missing required fields for remove_user.")
+        return
+    api.delete_user(username)
+    handler.conn.send_msg(json.dumps({"status": "success", "message": "User removed successfully"}).encode('utf-8'))
 
-        # Encrypt and send response
-        try:
-            encrypted_response = self.server.encrypt_response(
-                RequestSerializer.encode(response),
-                request.session_key
-            )
-            self.server.log(f"Encrypted response to be sent: {encrypted_response}")
-            self.conn.sendall(encrypted_response)  # No .encode('utf-8') needed here since it's already bytes
-        except Exception as e:
-            self.server.log(f"Error encrypting or sending response: {e}")
+@action_handler("logout")
+def logout(handler, req):
+    print("Handling logout action...")
+    handler.conn.send_msg(json.dumps({"status": "success", "message": "Logout successful"}).encode('utf-8'))
 
-@client_action
-class ProcessRegisterStaff:
-    action_name = "signupStaff"
-
-    def __init__(self, server, conn, cursor, db_conn):
-        self.server = server
-        self.conn = conn
-        self.cursor = cursor
-        self.db_conn = db_conn
-
-    def handle_action(self, request):
-        profile = Staff_Profile.from_dict(request.profile)
-        self.server.log(f"Processing registration for profile ID: {profile.id}")
-
-        # Check if the ID already exists
-        if get_user(profile.id):
-            self.server.log(f"Registration failed: ID {profile.id} already exists.")
-            response = Request(action="signup_response", content="Registration failed: ID already exists.")
-        else:
-            # Store the profile in the database
-            user = User(username=profile.id, password=request.profile['password'], role="staff", profile=profile)
-            store_in_DB(user)
-            self.server.log(f"Registration successful for profile ID: {profile.id}")
-            response = Request(action="signup_response", content="Registration successful.")
-
-        # Encrypt and send response
-        try:
-            encrypted_response = self.server.encrypt_response(
-                RequestSerializer.encode(response),
-                request.session_key
-            )
-            self.server.log(f"Encrypted response to be sent: {encrypted_response}")
-            self.conn.sendall(encrypted_response)  # No .encode('utf-8') needed here since it's already bytes
-        except Exception as e:
-            self.server.log(f"Error encrypting or sending response: {e}")
-
-@client_action
-class ProcessLogin:
-    action_name = "login"
-
-    def __init__(self, server, conn, cursor, db_conn):
-        self.server = server
-        self.conn = conn
-        self.cursor = cursor
-        self.db_conn = db_conn
-
-    def handle_action(self, request):
-        user = get_user(request.student_id)
-        if user:
-            self.conn.sendall(RequestSerializer.encode(Request(action="login_response", content="Login successful.", profile=user.profile.to_dict())))
-        else:
-            self.conn.sendall(RequestSerializer.encode(Request(action="login_response", content="Login failed: User not found.")))
-
-@client_action
-class ProcessLogout:
-    action_name = "logout"
-
-    def __init__(self, server, conn, cursor, db_conn):
-        self.server = server
-        self.conn = conn
-        self.cursor = cursor
-        self.db_conn = db_conn
-
-    def handle_action(self, request):
-        self.conn.sendall(RequestSerializer.encode(Request(action="logout_response", content="Logout successful.")))
-
-@client_action
-class ProcessSubmitRequest:
-    action_name = "submit_request"
-
-    def __init__(self, server, conn, cursor, db_conn):
-        self.server = server
-        self.conn = conn
-        self.cursor = cursor
-        self.db_conn = db_conn
-
-    def handle_action(self, request):
-        self.cursor.execute("""
+@action_handler("submit_request")
+def submit_request(handler, req):
+    print("Handling submit_request action...")
+    student_id = req.get("student_id", None)
+    content = req.get("content", None)
+    approver_id = req.get("approver_id", None)
+    if not student_id or not content or not approver_id:
+        print("Missing required fields for submit_request.")
+        return
+    connection = sqlite3.connect('Database/system.db')
+    cursor = connection.cursor()
+    try:
+        cursor.execute("""
             INSERT INTO exit_requests (student_id, content, approved, approver_id)
             VALUES (?, ?, ?, ?)
-        """, (request.student_id, request.content, False, request.approver_id))
-        self.db_conn.commit()
-        self.conn.sendall(RequestSerializer.encode(Request(action="submit_request_response", content="Request submission sent.")))
+        """, (student_id, content, False, approver_id))
+        connection.commit()
+        cookie = handler.create_cookie(api.get_user(student_id).username)
+        handler.conn.send_msg(json.dumps({"status": "success", "message": "Request submitted successfully"}).encode('utf-8'), "cookie", cookie)
+    except sqlite3.OperationalError as e:
+        print(f"Error submitting request: {e}")
+        handler.conn.send_msg(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))
+    finally:
+        connection.close()
 
-@client_action
-class ProcessApproveRequest:
-    action_name = "approve_request"
-
-    def __init__(self, server, conn, cursor, db_conn):
-        self.server = server
-        self.conn = conn
-        self.cursor = cursor
-        self.db_conn = db_conn
-
-    def handle_action(self, request):
-        self.cursor.execute("""
+@action_handler("approve_request")
+def approve_request(handler, req):
+    print("Handling approve_request action...")
+    request_id = req.get("request_id", None)
+    if not request_id:
+        print("Missing required fields for approve_request.")
+        return
+    connection = sqlite3.connect('Database/system.db')
+    cursor = connection.cursor()
+    try:
+        cursor.execute("""
             UPDATE exit_requests SET approved = 1 WHERE id = ?
-        """, (request.request_id,))
-        self.db_conn.commit()
-        self.conn.sendall(RequestSerializer.encode(Request(action="approve_request_response", content="Approval request sent.")))
+        """, (request_id,))
+        connection.commit()
+        handler.conn.send_msg(json.dumps({"status": "success", "message": "Request approved successfully"}).encode('utf-8'))
+    except sqlite3.OperationalError as e:
+        print(f"Error approving request: {e}")
+        handler.conn.send_msg(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))
+    finally:
+        connection.close()
 
-@client_action
-class ProcessViewRequests:
-    action_name = "view_requests"
-
-    def __init__(self, server, conn, cursor, db_conn):
-        self.server = server
-        self.conn = conn
-        self.cursor = cursor
-        self.db_conn = db_conn
-
-    def handle_action(self, request):
-        self.cursor.execute("""
+@action_handler("view_requests")
+def view_requests(handler, req):
+    print("Handling view_requests action...")
+    approver_id = req.get("approver_id", None)
+    if not approver_id:
+        print("Missing required fields for view_requests.")
+        return
+    connection = sqlite3.connect('Database/system.db')
+    cursor = connection.cursor()
+    try:
+        cursor.execute("""
             SELECT * FROM exit_requests WHERE approver_id = ?
-        """, (request.student_id,))
-        requests = self.cursor.fetchall()
+        """, (approver_id,))
+        requests = cursor.fetchall()
         response = [{"id": r[0], "student_id": r[1], "content": r[2], "approved": bool(r[3])} for r in requests]
-        self.conn.sendall(RequestSerializer.encode(Request(action="view_requests_response", content=response)))
+        handler.conn.send_msg(json.dumps(response).encode('utf-8'))
+    except sqlite3.OperationalError as e:
+        print(f"Error viewing requests: {e}")
+        handler.conn.send_msg(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))
+    finally:
+        connection.close()
