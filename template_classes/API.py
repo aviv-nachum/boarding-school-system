@@ -5,12 +5,12 @@ class API:
     def __init__(self):
         pass
 
-    def sign_up(self, username, email, password):
+    def sign_up(self, username, password):
         user = User(username=username, password=password, role="guest", profile=None)
         store_in_DB(user)
 
-    def get_user(self, email):
-        return get_user(email)
+    def get_user(self, username):
+        return get_user(username)
 
     def delete_user(self, user):
         remove_from_DB(user.username)

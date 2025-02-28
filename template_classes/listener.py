@@ -1,11 +1,12 @@
 from socket import socket, AF_INET, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
+from config import HOST, PORT
 import threading
 from threading import Thread
 from template_classes.handler import Handler
 
 
 class Listener:
-    def __init__(self, host="localhost", port=8080, backlog=1000):
+    def __init__(self, host=HOST, port=PORT, backlog=1000):
         """
         Initialize the listener with a host and port.
         """
@@ -39,5 +40,5 @@ class Listener:
 
 
 if __name__ == "__main__":
-    listener = Listener(host="localhost", port=9003)
+    listener = Listener()
     listener.start()

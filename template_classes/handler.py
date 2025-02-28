@@ -8,8 +8,8 @@ import datetime
 
 
 permissions: dict[str, list[str]] = {
-    "signup": ["guest", "student", "staff"],
-    "login": ["guest"],
+    "signup": ["guest"],
+    "login": ["guest", "student", "staff"],
     "remove_user": ["staff"],
     "logout": ["student", "staff"],
     "submit_request": ["student"],
@@ -73,13 +73,12 @@ class Handler:
             req (dict[str, Any]): The request data containing "username" and "password".
         """
         username = req.get("username", None)
-        email = req.get("email", None)
         password = req.get("password", None)
         if (not username) or (not password):
-            #self.send_error("must give username and password for login")
+            print("must give username and password for login")
             return
-        self.api.sign_up(username, email, password)
-        #self.send_sucsess(f"user {username} added")
+        self.api.sign_up(username, password)
+        print(f"user {username} added")
 
     def set_active_user_name(self, req: dict[str, Any]) -> str | None:
         """

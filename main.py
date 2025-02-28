@@ -47,6 +47,7 @@ def register_student():
 
     user.register(profile)
     print("Student registered successfully.")
+    student_menu()
 
 def login_student():
     global user
@@ -84,6 +85,7 @@ def register_staff():
     sleep(1)
     user.register(profile)
     print("Staff registered successfully.")
+    staff_menu()
 
 def login_staff():
     global user
@@ -119,6 +121,7 @@ def submit_request():
     content = input("Enter your request content: ").strip()
     approver_id = input("Enter the approver ID: ").strip()
     user.submit_request(content, approver_id)
+    student_menu()
 
 def staff_menu():
     """Display the staff menu."""
@@ -137,6 +140,7 @@ def staff_menu():
             user.view_requests()
             request_id = int(input("Enter the request ID to approve: ").strip())
             user.approve_request(request_id=request_id)
+            staff_menu()
         else:
             print("Invalid option. Please try again.")
 

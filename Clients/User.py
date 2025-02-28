@@ -14,6 +14,7 @@ class User(Thread):
         self.role = role
         self.profile = profile
         self.conn = ClientEncConnection(HOST, PORT, socket())
+        self.conn.start()  # Ensure the connection is properly started
         self.session_key = None
         self.session_id = None
 
@@ -30,15 +31,13 @@ class User(Thread):
         session_key_encoded = base64.b64encode(self.session_key).decode('utf-8')
         request = Request(action="login", student_id=user_id, session_key=session_key_encoded)
         serialized_request = RequestSerializer.encode(request)
-        encrypted_request = self.conn.encrypt_request(serialized_request)
-        self.conn.send(encrypted_request)
+        self.conn.send_msg(serialized_request)
         try:
-            encrypted_response = self.conn.recv(4096)
+            encrypted_response = self.conn.recv_msg()
             if encrypted_response:
-                response = self.conn.decrypt_response(encrypted_response)
-                response_data = json.loads(response)
-                self.session_id = response_data.get("session_id")
-                print(response_data.get("message"))
+                response = json.loads(encrypted_response.decode('utf-8'))
+                self.session_id = response.get("session_id")
+                print(response.get("message"))
             else:
                 print("No response received from server")
         except ConnectionAbortedError as e:
@@ -48,8 +47,7 @@ class User(Thread):
         session_key_encoded = base64.b64encode(self.session_key).decode('utf-8')
         request = Request(action="logout", content={"session_id": self.session_id}, session_key=session_key_encoded)
         serialized_request = RequestSerializer.encode(request)
-        encrypted_request = self.conn.encrypt_request(serialized_request)
-        self.conn.send(encrypted_request)
-        encrypted_response = self.conn.recv(4096)
-        response = self.conn.decrypt_response(encrypted_response)
+        self.conn.send_msg(serialized_request)
+        encrypted_response = self.conn.recv_msg()
+        response = json.loads(encrypted_response.decode('utf-8'))
         print(response)

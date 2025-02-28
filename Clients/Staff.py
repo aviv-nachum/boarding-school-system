@@ -7,12 +7,12 @@ class Staff(User):
 
     def view_requests(self):
         request = Request(action="view_requests")
-        self.send_request(request)
-        response = self.receive_response()
-        print(response.content)
+        self.conn.send_msg(request.to_json().encode('utf-8'))
+        response = self.conn.recv_msg().decode('utf-8')
+        print(response)
 
     def approve_request(self, request_id):
         request = Request(action="approve_request", request_id=request_id)
-        self.send_request(request)
-        response = self.receive_response()
-        print(response.content)
+        self.conn.send_msg(request.to_json().encode('utf-8'))
+        response = self.conn.recv_msg().decode('utf-8')
+        print(response)

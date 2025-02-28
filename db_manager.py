@@ -1,3 +1,4 @@
+import os
 from config import HOST, PORT
 from Clients.User import User
 from Profiles.Profile import Profile
@@ -58,11 +59,16 @@ def get_user(username):
         connection.close()
 
 def reset_database():
-    connection = sqlite3.connect('Database/system.db')
-    cursor = connection.cursor()
+    db_path = 'Database/system.db'
+    
+    # Remove the existing database file if it exists
+    if os.path.exists(db_path):
+        os.remove(db_path)
+        print("Removed existing database file successfully")
 
-    cursor.execute("DROP TABLE IF EXISTS users")
-    cursor.execute("DROP TABLE IF EXISTS exit_requests")
+    # Create a new database file and reset its structure
+    connection = sqlite3.connect(db_path)
+    cursor = connection.cursor()
 
     cursor.execute('''CREATE TABLE users (
             username TEXT PRIMARY KEY,
@@ -83,3 +89,4 @@ def reset_database():
 
     connection.commit()
     connection.close()
+    print("Database reset and structure created successfully")
