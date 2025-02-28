@@ -27,10 +27,11 @@ class Handler:
         self.active_user = None
 
     def handle_request(self, request: bytes):
-        print("Handling request...")
-        print(f"Active role: {self.active_role}")
+        #print("Handling request...")
         req: dict[str, Any] = json.loads(request)
-        self.active_role = req.get("profile", None).get("role", None)
+        if req.get("profile", None).get("role", None):
+            self.active_role = req.get("profile", None).get("role", None)
+        #print(f"Active role: {self.active_role}")
         action: str = req.get("action", None)
         self.active_user = None
         self.set_active_user_name(req)
@@ -47,11 +48,11 @@ class Handler:
 
     def set_active_user_name(self, req: dict[str, Any]) -> str | None:
         self.active_user = None
-        login_cookie = req.get("cookie", None)
+        cookie = req.get("cookie", None)
         try:
-            if login_cookie is None:
+            if cookie is None:
                 return
-            cookie = jwt.decode(login_cookie, self.key, algorithms="HS256", options={"verify_signature": True})
+            cookie = jwt.decode(cookie, self.key, algorithms="HS256", options={"verify_signature": True})
             active_username = cookie["username"]
             self.active_user = self.api.get_user(active_username)
             if self.active_user:
@@ -61,11 +62,11 @@ class Handler:
 
     def handle_forever(self) -> None:
         self.conn.start()
-        print("Server up and running")
+        #print("Handling requests...")
         while True:
             try:
                 request = self.conn.recv_msg()
-                print(f"Received request: {request}")
+                #print(f"Received request: {request}")
                 self.handle_request(request)
             except IOError as error:
                 print(f"Connection error: {error}")
@@ -74,7 +75,7 @@ class Handler:
         if action not in permissions:
             print(f"Action '{action}' not found in permissions.")
             return False
-        print(f"Checking permissions of {self.active_role} for action '{action}'...")
+        #print(f"Checking permissions of {self.active_role} for action '{action}'...")
         return self.active_role in permissions[action]
 
     def create_cookie(self, username: str):

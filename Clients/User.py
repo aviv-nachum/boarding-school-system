@@ -37,7 +37,7 @@ class User(Thread):
             if encrypted_response:
                 response = json.loads(encrypted_response.decode('utf-8'))
                 self.session_id = response.get("session_id")
-                print(response.get("message"))
+                #print(response.get("message"))
             else:
                 print("No response received from server")
         except ConnectionAbortedError as e:

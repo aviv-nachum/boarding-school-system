@@ -10,7 +10,7 @@ class Student(User):
         request = Request(action="signupStudent", profile=profile.to_dict())
         self.conn.send_msg(request.to_json().encode('utf-8'))
         response = self.conn.recv_msg().decode('utf-8')
-        print(response)
+        #print(response)
 
     def login(self, student_id):
         request = Request(action="login", student_id=student_id)
@@ -23,10 +23,11 @@ class Student(User):
     def submit_request(self, content, approver_id):
         request = Request(
             action="submit_request",
+            student_id=self.profile.to_dict().get("id"),
             content=content,
             approver_id=approver_id,
             profile={"session_id": self.session_id}
         )
         self.conn.send_msg(request.to_json().encode('utf-8'))
         response = self.conn.recv_msg().decode('utf-8')
-        print(response)
+        #print(response)

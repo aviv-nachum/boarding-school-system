@@ -33,6 +33,8 @@ class Student_Profile(Profile):
             id=data['id'],
             name=data['name'],
             surname=data['surname'],
+            password=data['password'],
+            role=data['role'],
             grade=data.get('grade'),
             class_number=data.get('class_number'),
             head_teacher_id=data.get('head_teacher_id'),

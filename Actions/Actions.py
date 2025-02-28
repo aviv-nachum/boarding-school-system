@@ -14,7 +14,7 @@ def action_handler(action_name):
 
 @action_handler("signupStudent")
 def signup_student(handler, req):
-    print("Handling signupStudent action...")
+    #print("Handling signupStudent action...")
     profile = req.get("profile", None)
     username = profile.get("name", None)
     password = profile.get("password", None)
@@ -75,7 +75,7 @@ def logout(handler, req):
 
 @action_handler("submit_request")
 def submit_request(handler, req):
-    print("Handling submit_request action...")
+    #print("Handling submit_request action...")
     student_id = req.get("student_id", None)
     content = req.get("content", None)
     approver_id = req.get("approver_id", None)
@@ -91,7 +91,7 @@ def submit_request(handler, req):
         """, (student_id, content, False, approver_id))
         connection.commit()
         cookie = handler.create_cookie(api.get_user(student_id).username)
-        handler.conn.send_msg(json.dumps({"status": "success", "message": "Request submitted successfully"}).encode('utf-8'), "cookie", cookie)
+        handler.conn.send_msg(json.dumps({"status": "success", "message": "Request submitted successfully","cookie": cookie}).encode('utf-8'))
     except sqlite3.OperationalError as e:
         print(f"Error submitting request: {e}")
         handler.conn.send_msg(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))

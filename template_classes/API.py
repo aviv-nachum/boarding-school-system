@@ -6,7 +6,7 @@ class API:
         pass
 
     def sign_up(self, username, password, role, profile):
-        print(f"Signing up user: {username}, role: {role}")
+        #print(f"Signing up user: {username}, role: {role}")
         user = User(username=username, password=password, role=role, profile=profile)
         store_in_DB(user)
 
