@@ -18,6 +18,17 @@ class Request:
         self.profile = profile
         self.session_key = session_key
 
+    def to_json(self):
+        return json.dumps({
+            "action": self.action,
+            "student_id": self.student_id,
+            "content": self.content,
+            "approver_id": self.approver_id,
+            "request_id": self.request_id,
+            "profile": self.profile,
+            "session_key": self.session_key,
+        })
+
 class RequestSerializer:
     """
     Handles serialization and deserialization of Request objects.

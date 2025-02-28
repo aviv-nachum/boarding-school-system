@@ -1,11 +1,12 @@
 from socket import socket, AF_INET, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
+from config import HOST, PORT
 import threading
 from threading import Thread
-from handler import Handler
+from template_classes.handler import Handler
 
 
 class Listener:
-    def __init__(self, host="localhost", port=8080, backlog=1000):
+    def __init__(self, host=HOST, port=PORT, backlog=1000):
         """
         Initialize the listener with a host and port.
         """
@@ -19,19 +20,14 @@ class Listener:
         """
         Start the listener to accept incoming client connections.
         """
-        # Step 1: Create a socket object for the server
         self.server_socket = socket(AF_INET, SOCK_STREAM)
         self.server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-        # Step 2: Bind the server to the given host and port
         self.server_socket.bind((self.host, self.port))
-        # Step 3: Start listening for incoming connections
         self.server_socket.listen(self.backlog)
 
         while True:
-            # Step 4: Accept incoming connections
             conn, _ = self.server_socket.accept()
-            # for each accepted connection create an Handler Instace to handle it, run the handler in a separate thread
-            handler = Handler(conn)
+            handler = Handler(conn, self.host, self.port)
             thread = Thread(target=handler.handle_forever)
             self.active_connection.append(thread)
             thread.start()
@@ -40,9 +36,9 @@ class Listener:
         """
         Stop the listener and close the server socket.
         """
-        pass
+        self.server_socket.close()
 
 
 if __name__ == "__main__":
-    listener = Listener(host="localhost", port=9003)
+    listener = Listener()
     listener.start()

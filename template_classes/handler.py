@@ -1,23 +1,20 @@
 import json
 import socket
 from typing import Any
-from encConnection import ServerEncConnection
+from template_classes.encConnection import ServerEncConnection
 import jwt
-from server import API
+from template_classes.API import API
 import datetime
 
 
 permissions: dict[str, list[str]] = {
-    "signup": ["guest", "user", "admin"],
-    "login": ["guest"],
-    "remove_user": ["admin"],
-    "logout": ["user", "admin"],
-    "user_create_task": ["user", "admin"],
-    "group_create_task":["user", "admin"],
-    "edit_username":["user", "admin"],
-    "return_tasks": ["user", "admin"],
-    "join_group": ["user, admin"],
-    
+    "signup": ["guest"],
+    "login": ["guest", "student", "staff"],
+    "remove_user": ["staff"],
+    "logout": ["student", "staff"],
+    "submit_request": ["student"],
+    "approve_request": ["staff"],
+    "view_requests": ["staff"],
 }
 
 
@@ -59,17 +56,14 @@ class Handler:
         elif action == "logout":
             self.handle_logout(req)
 
-        elif action == "user_create_task":
-            self.handle_user_create_task(req)
+        elif action == "submit_request":
+            self.handle_submit_request(req)
 
-        elif action == "return_tasks":
-            self.handle_return_task_list()
+        elif action == "approve_request":
+            self.handle_approve_request(req)
 
-        elif action == "join_group":
-            self.handle_join_group(req)
-
-        elif action =="change_group_code":
-            self.handle_change_group_code()
+        elif action == "view_requests":
+            self.handle_view_requests(req)
 
     def handle_signup(self, req: dict[str, Any]):
         """
@@ -79,13 +73,12 @@ class Handler:
             req (dict[str, Any]): The request data containing "username" and "password".
         """
         username = req.get("username", None)
-        email = req.get("email", None)
         password = req.get("password", None)
         if (not username) or (not password):
-            #self.send_error("must give username and password for login")
+            print("must give username and password for login")
             return
-        self.api.sign_up(username, email, password)
-        #self.send_sucsess(f"user {username} added")
+        self.api.sign_up(username, password)
+        print(f"user {username} added")
 
     def set_active_user_name(self, req: dict[str, Any]) -> str | None:
         """
@@ -107,7 +100,7 @@ class Handler:
             active_email = cookie["email"]
             self.active_user = self.api.get_user(active_email) #API REF
             if self.active_user:
-                self.active_role = self.api.check_role(self.active_user)
+                self.active_role = self.active_user.role
         except (jwt.exceptions.DecodeError, jwt.exceptions.InvalidSignatureError, jwt.exceptions.InvalidTokenError, jwt.exceptions.ExpiredSignatureError) as e:
             print(f"Cookie error: {e}")
 
@@ -210,58 +203,35 @@ class Handler:
         encCookie=jwt.encode(cookie, self.key , algorithm="HS256")
         self.conn.send_msg(encCookie.encode("utf-8"))
 
-    def handle_user_create_task(self, req: dict[str, Any]):
-        """
-        Handle requests to create a user task.
+    def handle_submit_request(self, req: dict[str, Any]):
+        try:
+            self.cursor.execute("""
+                INSERT INTO exit_requests (student_id, content, approved, approver_id)
+                VALUES (?, ?, ?, ?)
+            """, (req["student_id"], req["content"], False, req["approver_id"]))
+            self.db_conn.commit()
+            self.conn.send_msg(json.dumps({"status": "success"}).encode())
+        except Exception as e:
+            self.conn.send_msg(json.dumps({"status": "error", "desc": str(e)}).encode())
 
-        Args:
-            req (dict[str, Any]): The request data containing "task_setting".
-        """
-        if not "task_setting" in req:
-            print("Missing task settings")
-        setting=req.get("task_setting", None)
-        task=self.api.create_task(setting.get("name",None))
-        if task:
-            self.api.add_task_to_user(task, self.active_user)
-        else: return "Task already exists"
+    def handle_approve_request(self, req: dict[str, Any]):
+        try:
+            self.cursor.execute("""
+                UPDATE exit_requests SET approved = 1 WHERE id = ?
+            """, (req["request_id"],))
+            self.db_conn.commit()
+            self.conn.send_msg(json.dumps({"status": "success"}).encode())
+        except Exception as e:
+            self.conn.send_msg(json.dumps({"status": "error", "desc": str(e)}).encode())
 
-    def handle_return_task_list(self):
-        """
-        Handle requests to get a user task list.
-
-        Returns:
-            List of current user tasks.
-        """
-        tasks=self.api.retrive_tasks(self.active_user)
-        if tasks:
-            data=json.dumps(tasks)
-            self.conn.send_msg(data.encode("utf-8"))
-            return
-        raise Exception("No Data to show")
-    
-    def handle_join_group(self, req: dict[str, Any]):
-        """
-        Handle requests to join group.
-
-        Args:
-            req (dict[str, Any]): The request data containing "code".
-        """
-        if not "code" in req:
-            print("Missing code value")
-        code=req.get("code", None)
-        self.api.add_user_to_grp(self.active_user, code)
-        return
-    
-    def handle_change_group_code(self):
-        """
-        Handle requests to change group code.
-
-        Returns:
-            req (dict[str, Any]): The request data containing "code".
-        """
-        if not "code" in req:
-            print("Missing code value")
-        code=req.get("code", None)
-        self.api.add_user_to_grp(self.active_user, code)
-        return
-        
+    def handle_view_requests(self, req: dict[str, Any]):
+        try:
+            self.cursor.execute("""
+                SELECT * FROM exit_requests WHERE approver_id = ?
+            """, (req["approver_id"],))
+            requests = self.cursor.fetchall()
+            response = [{"id": r[0], "student_id": r[1], "content": r[2], "approved": bool(r[3])} 
+                       for r in requests]
+            self.conn.send_msg(json.dumps(response).encode())
+        except Exception as e:
+            self.conn.send_msg(json.dumps({"status": "error", "desc": str(e)}).encode())
