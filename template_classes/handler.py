@@ -7,8 +7,8 @@ import jwt
 import datetime
 
 permissions: dict[str, list[str]] = {
-    "signupStudent": ["guest","student", "staff"],
-    "signupStaff": ["guest","student", "staff"],
+    "signupStudent": ["guest", "student", "staff"],
+    "signupStaff": ["guest", "student", "staff"],
     "login": ["guest"],
     "remove_user": ["staff"],
     "logout": ["student", "staff"],
@@ -27,11 +27,11 @@ class Handler:
         self.active_user = None
 
     def handle_request(self, request: bytes):
-        #print("Handling request...")
+        print("Handling request...")
         req: dict[str, Any] = json.loads(request)
         if req.get("profile", None).get("role", None):
             self.active_role = req.get("profile", None).get("role", None)
-        #print(f"Active role: {self.active_role}")
+        print(f"Active role: {self.active_role}")
         action: str = req.get("action", None)
         self.active_user = None
         self.set_active_user_name(req)
@@ -62,7 +62,7 @@ class Handler:
 
     def handle_forever(self) -> None:
         self.conn.start()
-        #print("Handling requests...")
+        #print("Server up and running")
         while True:
             try:
                 request = self.conn.recv_msg()
@@ -75,12 +75,13 @@ class Handler:
         if action not in permissions:
             print(f"Action '{action}' not found in permissions.")
             return False
-        #print(f"Checking permissions of {self.active_role} for action '{action}'...")
+        print(f"Checking permissions of {self.active_role} for action '{action}'...")
         return self.active_role in permissions[action]
 
-    def create_cookie(self, username: str):
+    def create_cookie(self, username: str, id: int):
         cookie = {
             "username": username,
+            "id": id,
             "exp": datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(hours=1)
         }
-        return jwt.encode(cookie, self.key, algorithm="HS256")  
+        return jwt.encode(cookie, self.key, algorithm="HS256")

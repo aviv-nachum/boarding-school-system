@@ -14,29 +14,31 @@ def action_handler(action_name):
 
 @action_handler("signupStudent")
 def signup_student(handler, req):
-    #print("Handling signupStudent action...")
+    print("Handling signupStudent action...")
     profile = req.get("profile", None)
     username = profile.get("name", None)
     password = profile.get("password", None)
-    #print(profile, username, password)
+    student_id = profile.get("id", None)
     if not username or not password or not profile:
         print("Missing required fields for signupStudent.")
         return
     api.sign_up(username, password, "student", profile)
-    cookie = handler.create_cookie(username)
+    cookie = handler.create_cookie(username, student_id)
     handler.conn.send_msg(json.dumps({"status": "success", "message": "Student registered successfully", "cookie": cookie}).encode('utf-8'))
 
 @action_handler("signupStaff")
 def signup_staff(handler, req):
     print("Handling signupStaff action...")
-    username = req.get("username", None)
-    password = req.get("password", None)
     profile = req.get("profile", None)
+    username = profile.get("name", None)
+    password = profile.get("password", None)
+    staff_id = profile.get("id", None)
     if not username or not password or not profile:
         print("Missing required fields for signupStaff.")
         return
     api.sign_up(username, password, "staff", profile)
-    handler.conn.send_msg(json.dumps({"status": "success", "message": "Staff registered successfully"}).encode('utf-8'))
+    cookie = handler.create_cookie(username, staff_id)
+    handler.conn.send_msg(json.dumps({"status": "success", "message": "Staff registered successfully", "cookie": cookie}).encode('utf-8'))
 
 @action_handler("login")
 def login(handler, req):
@@ -55,7 +57,7 @@ def login(handler, req):
         print("Invalid username or password.")
         handler.conn.send_msg(json.dumps({"status": "error", "message": "Invalid username or password"}).encode('utf-8'))
         return
-    cookie = handler.create_cookie(username)
+    cookie = handler.create_cookie(username, user.profile.id)
     handler.conn.send_msg(json.dumps({"status": "success", "message": "Login successful", "cookie": cookie}).encode('utf-8'))
 
 @action_handler("remove_user")
@@ -75,11 +77,11 @@ def logout(handler, req):
 
 @action_handler("submit_request")
 def submit_request(handler, req):
-    #print("Handling submit_request action...")
-    student_id = req.get("student_id", None)
+    print("Handling submit_request action...")
+    name = req.get("profle", None).get("name", None)
+    student_id = req.get("profile", None).get("id", None)
     content = req.get("content", None)
     approver_id = req.get("approver_id", None)
-    print(student_id, content, approver_id)
     if not student_id or not content or not approver_id:
         print("Missing required fields for submit_request.")
         return
@@ -91,9 +93,9 @@ def submit_request(handler, req):
             VALUES (?, ?, ?, ?)
         """, (student_id, content, False, approver_id))
         connection.commit()
-        print(api.get_user_by_id(student_id).username)
-        cookie = handler.create_cookie(api.get_user_by_id(student_id).username)
-        handler.conn.send_msg(json.dumps({"status": "success", "message": "Request submitted successfully","cookie": cookie}).encode('utf-8'))
+        print(name)
+        cookie = handler.create_cookie(name, student_id)
+        handler.conn.send_msg(json.dumps({"status": "success", "message": "Request submitted successfully", "cookie": cookie}).encode('utf-8'))
     except sqlite3.OperationalError as e:
         print(f"Error submitting request: {e}")
         handler.conn.send_msg(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))

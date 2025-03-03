@@ -7,13 +7,13 @@ class Student(User):
         super().__init__(username, password, "student", profile)
 
     def register(self, profile):
-        request = Request(action="signupStudent", profile=profile.to_dict())
+        request = Request(action="signupStudent", profile=profile.to_dict(), role=self.role)
         self.conn.send_msg(request.to_json().encode('utf-8'))
         response = self.conn.recv_msg().decode('utf-8')
         #print(response)
 
     def login(self, student_id):
-        request = Request(action="login", student_id=student_id)
+        request = Request(action="login", student_id=student_id, role=self.role)
         self.conn.send_msg(request.to_json().encode('utf-8'))
         response = self.conn.recv_msg().decode('utf-8')
         response_data = json.loads(response)
@@ -23,10 +23,10 @@ class Student(User):
     def submit_request(self, content, approver_id):
         request = Request(
             action="submit_request",
-            student_id=self.profile.to_dict().get("id"),
             content=content,
             approver_id=approver_id,
-            profile={"session_id": self.session_id}
+            profile= self.profile.to_dict(),
+            role=self.role
         )
         self.conn.send_msg(request.to_json().encode('utf-8'))
         response = self.conn.recv_msg().decode('utf-8')

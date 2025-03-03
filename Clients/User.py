@@ -29,7 +29,7 @@ class User(Thread):
 
     def login(self, user_id):
         session_key_encoded = base64.b64encode(self.session_key).decode('utf-8')
-        request = Request(action="login", student_id=user_id, session_key=session_key_encoded)
+        request = Request(action="login", student_id=user_id, session_key=session_key_encoded, role=self.role)
         serialized_request = RequestSerializer.encode(request)
         self.conn.send_msg(serialized_request)
         try:
@@ -37,7 +37,7 @@ class User(Thread):
             if encrypted_response:
                 response = json.loads(encrypted_response.decode('utf-8'))
                 self.session_id = response.get("session_id")
-                #print(response.get("message"))
+#                #print(response.get("message"))
             else:
                 print("No response received from server")
         except ConnectionAbortedError as e:
@@ -45,7 +45,7 @@ class User(Thread):
 
     def logout(self):
         session_key_encoded = base64.b64encode(self.session_key).decode('utf-8')
-        request = Request(action="logout", content={"session_id": self.session_id}, session_key=session_key_encoded)
+        request = Request(action="logout", content={"session_id": self.session_id}, session_key=session_key_encoded, role=self.role)
         serialized_request = RequestSerializer.encode(request)
         self.conn.send_msg(serialized_request)
         encrypted_response = self.conn.recv_msg()
