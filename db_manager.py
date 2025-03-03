@@ -57,6 +57,30 @@ def get_user(username):
     finally:
         connection.close()
 
+def get_user_by_id(id):
+    connection = sqlite3.connect('Database/system.db')
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute("SELECT username, password, role, profile FROM users WHERE id = ?", (id,))
+        user_data = cursor.fetchone()
+        if user_data:
+            profile_data = json.loads(user_data[3])
+            if user_data[2] == "student":
+                profile = Student_Profile.from_dict(profile_data)
+            elif user_data[2] == "staff":
+                profile = Staff_Profile.from_dict(profile_data)
+            else:
+                profile = None
+            return User(username=user_data[0], password=user_data[1], role=user_data[2], profile=profile)
+        else:
+            return None
+    except sqlite3.OperationalError as e:
+        print(f"Error retrieving user from DB: {e}")
+        return None
+    finally:
+        connection.close()
+
 def reset_database():
     db_path = 'Database/system.db'
     

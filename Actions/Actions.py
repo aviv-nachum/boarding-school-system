@@ -18,7 +18,7 @@ def signup_student(handler, req):
     profile = req.get("profile", None)
     username = profile.get("name", None)
     password = profile.get("password", None)
-    print(profile, username, password)
+    #print(profile, username, password)
     if not username or not password or not profile:
         print("Missing required fields for signupStudent.")
         return
@@ -79,6 +79,7 @@ def submit_request(handler, req):
     student_id = req.get("student_id", None)
     content = req.get("content", None)
     approver_id = req.get("approver_id", None)
+    print(student_id, content, approver_id)
     if not student_id or not content or not approver_id:
         print("Missing required fields for submit_request.")
         return
@@ -90,7 +91,8 @@ def submit_request(handler, req):
             VALUES (?, ?, ?, ?)
         """, (student_id, content, False, approver_id))
         connection.commit()
-        cookie = handler.create_cookie(api.get_user(student_id).username)
+        print(api.get_user_by_id(student_id).username)
+        cookie = handler.create_cookie(api.get_user_by_id(student_id).username)
         handler.conn.send_msg(json.dumps({"status": "success", "message": "Request submitted successfully","cookie": cookie}).encode('utf-8'))
     except sqlite3.OperationalError as e:
         print(f"Error submitting request: {e}")
