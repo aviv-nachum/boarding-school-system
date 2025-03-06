@@ -24,9 +24,11 @@ class Listener:
         self.server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         self.server_socket.bind((self.host, self.port))
         self.server_socket.listen(self.backlog)
+        print(f"Listening on {self.host}:{self.port}")
 
         while True:
-            conn, _ = self.server_socket.accept()
+            conn, addr = self.server_socket.accept()
+            print(f"Accepted connection from {addr}")
             handler = Handler(conn, self.host, self.port)
             thread = Thread(target=handler.handle_forever)
             self.active_connection.append(thread)

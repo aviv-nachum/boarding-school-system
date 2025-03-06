@@ -27,11 +27,11 @@ class Handler:
         self.active_user = None
 
     def handle_request(self, request: bytes):
-        print("Handling request...")
+#        #print("Handling request...")
         req: dict[str, Any] = json.loads(request)
-        if req.get("profile", None).get("role", None):
+        if req.get("profile", None) and req.get("profile", None).get("role", None):
             self.active_role = req.get("profile", None).get("role", None)
-        print(f"Active role: {self.active_role}")
+#        #print(f"Active role: {self.active_role}")
         action: str = req.get("action", None)
         self.active_user = None
         self.set_active_user_name(req)
@@ -43,7 +43,7 @@ class Handler:
             print(f"Action '{action}' is not permitted.")
             return
         elif action in action_handlers:
-            print(f"Executing action handler for '{action}'...")
+#            #print(f"Executing action handler for '{action}'...")
             action_handlers[action](self, req)
 
     def set_active_user_name(self, req: dict[str, Any]) -> str | None:
@@ -62,20 +62,21 @@ class Handler:
 
     def handle_forever(self) -> None:
         self.conn.start()
-        #print("Server up and running")
+#        #print("Server up and running")
         while True:
             try:
                 request = self.conn.recv_msg()
-                #print(f"Received request: {request}")
+#                #print(f"Received request: {request}")
                 self.handle_request(request)
             except IOError as error:
                 print(f"Connection error: {error}")
+                break  # Exit the loop if there's a connection error
 
     def permit_action(self, action: str) -> bool:
         if action not in permissions:
             print(f"Action '{action}' not found in permissions.")
             return False
-        print(f"Checking permissions of {self.active_role} for action '{action}'...")
+#print(f"#Checking permissions of {self.active_role} for action '{action}'...")
         return self.active_role in permissions[action]
 
     def create_cookie(self, username: str, id: int):

@@ -5,7 +5,7 @@ from Clients.Staff import Staff
 from Profiles.Staff_Profile import Staff_Profile
 from Profiles.Student_Profile import Student_Profile
 from threading import Thread
-from db_manager import get_user
+from db_manager import get_user, get_user_by_id
 
 interval = 3
 
@@ -56,7 +56,7 @@ def login_student():
     print("\n--- Log in as Student ---")
     student_id = input("Enter your Student ID: ").strip()
     password = input("Enter your password: ").strip()
-    user_data = get_user(student_id)
+    user_data = get_user_by_id(student_id)
     if user_data and user_data.role == "student":
         user = Student(student_id, password, user_data.profile)
         user.start()

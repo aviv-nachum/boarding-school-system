@@ -12,9 +12,9 @@ def store_in_DB(user):
 
     try:
         cursor.execute("""
-            INSERT INTO users (username, password, role, profile)
-            VALUES (?, ?, ?, ?)
-        """, (user.username, user.password, user.role, json.dumps(user.profile)))
+            INSERT INTO users (username, id, password, role, profile)
+            VALUES (?, ?, ?, ?, ?)
+        """, (user.username, user.profile.get("id", None), user.password, user.role, json.dumps(user.profile)))
         connection.commit()
     except sqlite3.IntegrityError as e:
         print(f"Error storing user in DB: {e}")
@@ -95,6 +95,7 @@ def reset_database():
 
     cursor.execute('''CREATE TABLE users (
             username TEXT PRIMARY KEY,
+            id TEXT NOT NULL,
             password TEXT NOT NULL,
             role TEXT NOT NULL,
             profile TEXT NOT NULL

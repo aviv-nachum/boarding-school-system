@@ -9,8 +9,8 @@ class Student(User):
     def register(self, profile):
         request = Request(action="signupStudent", profile=profile.to_dict(), role=self.role)
         self.conn.send_msg(request.to_json().encode('utf-8'))
-        response = self.conn.recv_msg().decode('utf-8')
-        #print(response)
+#        response = self.conn.recv_msg().decode('utf-8')
+#        print(response)
 
     def login(self, student_id):
         request = Request(action="login", student_id=student_id, role=self.role)
@@ -25,9 +25,9 @@ class Student(User):
             action="submit_request",
             content=content,
             approver_id=approver_id,
-            profile= self.profile.to_dict(),
+            profile=self.profile.to_dict(),
             role=self.role
         )
         self.conn.send_msg(request.to_json().encode('utf-8'))
-        response = self.conn.recv_msg().decode('utf-8')
-        #print(response)
+#        response = self.conn.recv_msg().decode('utf-8')
+#        print(response)

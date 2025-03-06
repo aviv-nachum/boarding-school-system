@@ -9,10 +9,10 @@ def generate_rsa_keys():
     # Remove existing keys if they exist
     if os.path.exists("enc_rsa_privkey.pem"):
         os.remove("enc_rsa_privkey.pem")
-        #print("Removed existing private RSA keys successfully")
+#        #print("Removed existing private RSA keys successfully")
     if os.path.exists("enc_rsa_pubkey.pem"):
         os.remove("enc_rsa_pubkey.pem")
-        #print("Removed existing public RSA keys successfully")
+#        #print("Removed existing public RSA keys successfully")
 
     # Generate new RSA keys
     key = RSA.generate(2048)

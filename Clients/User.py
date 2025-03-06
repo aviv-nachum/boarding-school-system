@@ -16,6 +16,7 @@ class User(Thread):
         self.conn = ClientEncConnection(HOST, PORT, socket())
         self.conn.start()  # Ensure the connection is properly started
         self.session_key = None
+        self.old_session_key = None
         self.session_id = None
 
     def set_password(self, password):
@@ -25,7 +26,7 @@ class User(Thread):
         return self.password == password
 
     def run(self):
-        print(f"Connected to the server as {self.role}.")
+        pass #print(f"Connected to the server as {self.role}.")
 
     def login(self, user_id):
         session_key_encoded = base64.b64encode(self.session_key).decode('utf-8')
@@ -37,17 +38,21 @@ class User(Thread):
             if encrypted_response:
                 response = json.loads(encrypted_response.decode('utf-8'))
                 self.session_id = response.get("session_id")
-#                #print(response.get("message"))
+                #print(response.get("message"))
             else:
                 print("No response received from server")
         except ConnectionAbortedError as e:
             print(f"Connection aborted: {e}")
 
     def logout(self):
-        session_key_encoded = base64.b64encode(self.session_key).decode('utf-8')
-        request = Request(action="logout", content={"session_id": self.session_id}, session_key=session_key_encoded, role=self.role)
-        serialized_request = RequestSerializer.encode(request)
-        self.conn.send_msg(serialized_request)
+        request = Request(action="logout", profile=self.profile.to_dict(), role=self.role)
+        self.conn.send_msg(request.to_json().encode('utf-8'))
+
+        #session_key_encoded = base64.b64encode(self.session_key).decode('utf-8')
+        #request = Request(action="logout", content={"session_id": self.session_id}, session_key=session_key_encoded, role=self.role)
+        #serialized_request = RequestSerializer.encode(request)
+        #self.conn.send_msg(serialized_request)
+        
         encrypted_response = self.conn.recv_msg()
         response = json.loads(encrypted_response.decode('utf-8'))
         print(response)

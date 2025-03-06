@@ -77,9 +77,10 @@ def logout(handler, req):
 
 @action_handler("submit_request")
 def submit_request(handler, req):
-    print("Handling submit_request action...")
-    name = req.get("profle", None).get("name", None)
-    student_id = req.get("profile", None).get("id", None)
+    #print("Handling submit_request action...")
+    profile = req.get("profile", None)
+    name = profile.get("name", None)
+    student_id = profile.get("id", None)
     content = req.get("content", None)
     approver_id = req.get("approver_id", None)
     if not student_id or not content or not approver_id:
@@ -93,7 +94,6 @@ def submit_request(handler, req):
             VALUES (?, ?, ?, ?)
         """, (student_id, content, False, approver_id))
         connection.commit()
-        print(name)
         cookie = handler.create_cookie(name, student_id)
         handler.conn.send_msg(json.dumps({"status": "success", "message": "Request submitted successfully", "cookie": cookie}).encode('utf-8'))
     except sqlite3.OperationalError as e:
