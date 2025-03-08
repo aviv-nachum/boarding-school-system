@@ -28,7 +28,7 @@ class Listener:
 
         while True:
             conn, addr = self.server_socket.accept()
-            print(f"Accepted connection from {addr}")
+            #print(f"Accepted connection from {addr}")
             handler = Handler(conn, self.host, self.port)
             thread = Thread(target=handler.handle_forever)
             self.active_connection.append(thread)

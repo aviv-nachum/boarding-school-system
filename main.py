@@ -42,7 +42,7 @@ def register_student():
         role="student"
     )
 
-    user = Student(id, password, profile)
+    user = Student(name, password, profile)
     user.start()  # Ensure connection to the server
 
     sleep(1)
@@ -54,14 +54,14 @@ def register_student():
 def login_student():
     global user
     print("\n--- Log in as Student ---")
-    student_id = input("Enter your Student ID: ").strip()
+    name = input("Enter your name: ").strip()
     password = input("Enter your password: ").strip()
-    user_data = get_user_by_id(student_id)
+    user_data = get_user(name)
     if user_data and user_data.role == "student":
-        user = Student(student_id, password, user_data.profile)
+        user = Student(name, password, user_data.profile)
         user.start()
         sleep(1)
-        user.login(student_id)
+        user.login(user_data.profile.id)
         student_menu()
     else:
         print("Invalid Student ID or user is not a student.")
@@ -72,19 +72,19 @@ def register_staff():
     staff_id = input("Enter your ID: ").strip()
     name = input("Enter your name: ").strip()
     surname = input("Enter your surname: ").strip()
-    position = input("Enter your position: ").strip()
     password = input("Enter your password: ").strip()
+    #client_student_id_dict = input("Enter the client student ID dictionary: ").strip()
+    #Request_ids = input("Enter the request IDs: ").strip()
 
     profile = Staff_Profile(
         id=staff_id,
         name=name,
         surname=surname,
-        position=position,
         password=password,
         role="staff"
     )
 
-    user = Staff(staff_id, password, profile)
+    user = Staff(name, password, profile)
     user.start()
     sleep(1)
     user.register(profile)
@@ -94,14 +94,14 @@ def register_staff():
 def login_staff():
     global user
     print("\n--- Log in as Staff ---")
-    staff_id = input("Enter your Staff ID: ").strip()
+    name = input("Enter your name: ").strip()
     password = input("Enter your password: ").strip()
-    user_data = get_user(staff_id)
+    user_data = get_user(name)
     if user_data and user_data.role == "staff":
-        user = Staff(staff_id, password, user_data.profile)
+        user = Staff(name, password, user_data.profile)
         user.start()
         sleep(1)
-        user.login(staff_id)
+        user.login(user_data.profile.id)
         staff_menu()
     else:
         print("Invalid Staff ID or user is not a staff member.")
@@ -117,7 +117,7 @@ def student_menu():
             submit_request()
         elif choice == '2':
             user.logout()
-            break
+            main_menu()
         else:
             print("Invalid choice. Please try again.")
 
@@ -139,7 +139,7 @@ def staff_menu():
         if choice == "1":
             user.logout()
             user_id = None
-            break
+            main_menu()
         elif choice == "2":
             user.view_requests()
             request_id = int(input("Enter the request ID to approve: ").strip())

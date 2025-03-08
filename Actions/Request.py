@@ -4,9 +4,9 @@ class Request:
     """
     Represents a request sent between the client and server.
     """
-    def __init__(self, action, student_id=None, content=None, approver_id=None, request_id=None, profile=None, session_key=None, role = None, username=None, password=None):
+    def __init__(self, action, user_id=None, content=None, approver_id=None, request_id=None, profile=None, session_key=None, role = None, username=None, password=None):
         self.action = action
-        self.student_id = student_id
+        self.user_id = user_id
         self.content = content
         self.approver_id = approver_id
         self.request_id = request_id
@@ -19,7 +19,7 @@ class Request:
     def to_json(self):
         return json.dumps({
             "action": self.action,
-            "student_id": self.student_id,
+            "user_id_id": self.user_id,
             "content": self.content,
             "approver_id": self.approver_id,
             "request_id": self.request_id,

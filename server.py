@@ -6,7 +6,7 @@ from config import HOST, PORT
 class Server(Thread):
     def __init__(self):
         super().__init__()
-        reset_database()
+        #reset_database()
         self.listener = Listener(host=HOST, port=PORT)
         
     def run(self):

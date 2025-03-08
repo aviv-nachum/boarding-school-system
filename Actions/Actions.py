@@ -50,14 +50,14 @@ def login(handler, req):
         return
     user = api.get_user(username)
     if not user:
-        print("Invalid username or password.")
+        print("Invalid username or password. not user")
         handler.conn.send_msg(json.dumps({"status": "error", "message": "Invalid username or password"}).encode('utf-8'))
         return
     if not api.check_password(user, password):
-        print("Invalid username or password.")
+        print("Invalid username or password. not check_password")
         handler.conn.send_msg(json.dumps({"status": "error", "message": "Invalid username or password"}).encode('utf-8'))
         return
-    cookie = handler.create_cookie(username, user.profile.id)
+    cookie = handler.create_cookie(user.profile.name, user.profile.id)
     handler.conn.send_msg(json.dumps({"status": "success", "message": "Login successful", "cookie": cookie}).encode('utf-8'))
 
 @action_handler("remove_user")

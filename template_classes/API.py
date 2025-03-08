@@ -11,7 +11,7 @@ class API:
         store_in_DB(user)
 
     def get_user(self, username):
-        print(f"Getting user: {username}")
+        #print(f"Getting user: {username}")
         return get_user(username)
     
     def get_user_by_id(self, id):

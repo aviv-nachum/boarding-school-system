@@ -5,10 +5,10 @@ class Staff_Profile(Profile):
     """
     Represents a profile for students only.
     """
-    def __init__(self, id, name, surname, password, role, client_student_id_dict, Request_ids = None):
+    def __init__(self, id, name, surname, password, role, students_list = [], pending_requests = []):
         super().__init__(id,name,surname, password, role)
-        client_student_id_dict = client_student_id_dict # For staff only
-        Request_ids = Request_ids # For staff only
+        self.students_list = students_list # For staff only
+        self.pending_requests = pending_requests # For staff only
     
     def to_dict(self):
         return {
@@ -17,8 +17,8 @@ class Staff_Profile(Profile):
             "surname": self.surname,
             "password": self.password,
             "role": self.role,
-            "client_student_id_dict": self.client_student_id_dict,
-            "Request_ids": self.Request_ids
+            "students_list": self.students_list,
+            "pending_requests": self.pending_requests
         }
     
     def from_dict(data):
@@ -29,6 +29,8 @@ class Staff_Profile(Profile):
             id=data['id'],
             name=data['name'],
             surname=data['surname'],
-            client_student_id_dict=data.get('client_student_id_dict'),
-            Request_ids=data.get('Request_ids')
+            password=data['password'],
+            role=data['role'],
+            students_list=data.get('students_list'),
+            pending_requests=data.get('pending_requests')
         )

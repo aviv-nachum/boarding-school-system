@@ -12,14 +12,6 @@ class Student(User):
 #        response = self.conn.recv_msg().decode('utf-8')
 #        print(response)
 
-    def login(self, student_id):
-        request = Request(action="login", student_id=student_id, role=self.role)
-        self.conn.send_msg(request.to_json().encode('utf-8'))
-        response = self.conn.recv_msg().decode('utf-8')
-        response_data = json.loads(response)
-        self.session_id = response_data.get("session_id")
-        print(response_data.get("message"))
-
     def submit_request(self, content, approver_id):
         request = Request(
             action="submit_request",

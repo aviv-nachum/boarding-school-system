@@ -5,6 +5,10 @@ class Staff(User):
     def __init__(self, username, password, profile):
         super().__init__(username, password, "staff", profile)
 
+    def register(self, profile):
+        request = Request(action="signupStaff", profile=profile.to_dict(), role=self.role)
+        self.conn.send_msg(request.to_json().encode('utf-8'))
+
     def view_requests(self):
         request = Request(action="view_requests", role=self.role)
         self.conn.send_msg(request.to_json().encode('utf-8'))
