@@ -27,11 +27,12 @@ class Handler:
         self.active_user = None
 
     def handle_request(self, request: bytes):
-#        #print("Handling request...")
+        #print("Handling request...")
         req: dict[str, Any] = json.loads(request)
+        #print(f"Request: {req}")
         if req.get("profile", None) and req.get("profile", None).get("role", None):
             self.active_role = req.get("profile", None).get("role", None)
-#        #print(f"Active role: {self.active_role}")
+        #print(f"Active role: {self.active_role}")
         action: str = req.get("action", None)
         self.active_user = None
         self.set_active_user_name(req)
@@ -51,9 +52,10 @@ class Handler:
         cookie = req.get("cookie", None)
         try:
             if cookie is None:
+                #print("No cookie found in the request.")
                 return
-            cookie = jwt.decode(cookie, self.key, algorithms="HS256", options={"verify_signature": True})
-            active_username = cookie["username"]
+            decoded_cookie = jwt.decode(cookie, self.key, algorithms="HS256", options={"verify_signature": True})
+            active_username = decoded_cookie["username"]
             self.active_user = self.api.get_user(active_username)
             if self.active_user:
                 self.active_role = self.active_user.role

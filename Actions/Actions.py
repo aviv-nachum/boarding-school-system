@@ -14,7 +14,7 @@ def action_handler(action_name):
 
 @action_handler("signupStudent")
 def signup_student(handler, req):
-    print("Handling signupStudent action...")
+    #print("Handling signupStudent action...")
     profile = req.get("profile", None)
     username = profile.get("name", None)
     password = profile.get("password", None)
@@ -28,7 +28,7 @@ def signup_student(handler, req):
 
 @action_handler("signupStaff")
 def signup_staff(handler, req):
-    print("Handling signupStaff action...")
+    #print("Handling signupStaff action...")
     profile = req.get("profile", None)
     username = profile.get("name", None)
     password = profile.get("password", None)
@@ -42,7 +42,7 @@ def signup_staff(handler, req):
 
 @action_handler("login")
 def login(handler, req):
-    print("Handling login action...")
+    #print("Handling login action...")
     username = req.get("username", None)
     password = req.get("password", None)
     if not username or not password:
@@ -57,12 +57,17 @@ def login(handler, req):
         print("Invalid username or password. not check_password")
         handler.conn.send_msg(json.dumps({"status": "error", "message": "Invalid username or password"}).encode('utf-8'))
         return
-    cookie = handler.create_cookie(user.profile.name, user.profile.id)
-    handler.conn.send_msg(json.dumps({"status": "success", "message": "Login successful", "cookie": cookie}).encode('utf-8'))
+    cookie = handler.create_cookie(user.username, user.profile.id)
+    handler.conn.send_msg(json.dumps({
+        "status": "success",
+        "message": "Login successful",
+        "cookie": cookie,
+        "profile": user.profile.to_dict()
+    }).encode('utf-8'))
 
 @action_handler("remove_user")
 def remove_user(handler, req):
-    print("Handling remove_user action...")
+    #print("Handling remove_user action...")
     username = req.get("username", None)
     if not username:
         print("Missing required fields for remove_user.")
@@ -72,7 +77,7 @@ def remove_user(handler, req):
 
 @action_handler("logout")
 def logout(handler, req):
-    print("Handling logout action...")
+    #print("Handling logout action...")
     handler.conn.send_msg(json.dumps({"status": "success", "message": "Logout successful"}).encode('utf-8'))
 
 @action_handler("submit_request")
@@ -104,7 +109,7 @@ def submit_request(handler, req):
 
 @action_handler("approve_request")
 def approve_request(handler, req):
-    print("Handling approve_request action...")
+    #print("Handling approve_request action...")
     request_id = req.get("request_id", None)
     if not request_id:
         print("Missing required fields for approve_request.")
@@ -126,19 +131,38 @@ def approve_request(handler, req):
 @action_handler("view_requests")
 def view_requests(handler, req):
     print("Handling view_requests action...")
-    approver_id = req.get("approver_id", None)
-    if not approver_id:
-        print("Missing required fields for view_requests.")
+    profile = req.get("profile", None)
+    if not profile:
+        print("Missing profile in the request.")
+        handler.conn.send_msg(json.dumps({"status": "error", "message": "Profile is required"}).encode('utf-8'))
         return
+
+    approver_id = profile.get("id", None)
+    if not approver_id:
+        print("Missing approver ID in the profile.")
+        handler.conn.send_msg(json.dumps({"status": "error", "message": "Approver ID is required"}).encode('utf-8'))
+        return
+
     connection = sqlite3.connect('Database/system.db')
     cursor = connection.cursor()
     try:
+        # Fetch requests where the approver_id matches
         cursor.execute("""
             SELECT * FROM exit_requests WHERE approver_id = ?
         """, (approver_id,))
         requests = cursor.fetchall()
+
+        # Format the requests into a response
         response = [{"id": r[0], "student_id": r[1], "content": r[2], "approved": bool(r[3])} for r in requests]
-        handler.conn.send_msg(json.dumps(response).encode('utf-8'))
+
+        # Send the response back to the client
+        cookie = handler.create_cookie(profile.get("name", None), approver_id)
+        handler.conn.send_msg(json.dumps({
+            "status": "success",
+            "requests": response,
+            "cookie": cookie,
+            "profile": profile
+        }).encode('utf-8'))
     except sqlite3.OperationalError as e:
         print(f"Error viewing requests: {e}")
         handler.conn.send_msg(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))

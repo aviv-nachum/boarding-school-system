@@ -4,7 +4,7 @@ class Request:
     """
     Represents a request sent between the client and server.
     """
-    def __init__(self, action, user_id=None, content=None, approver_id=None, request_id=None, profile=None, session_key=None, role = None, username=None, password=None):
+    def __init__(self, action, user_id=None, content=None, approver_id=None, request_id=None, profile=None, session_key=None, role=None, username=None, password=None, cookie=None):
         self.action = action
         self.user_id = user_id
         self.content = content
@@ -12,21 +12,24 @@ class Request:
         self.request_id = request_id
         self.profile = profile
         self.session_key = session_key
-        self.role = role,
+        self.role = role
         self.username = username
         self.password = password
+        self.cookie = cookie  # Add cookie to the request
 
     def to_json(self):
         return json.dumps({
             "action": self.action,
-            "user_id_id": self.user_id,
+            "user_id": self.user_id,
             "content": self.content,
             "approver_id": self.approver_id,
             "request_id": self.request_id,
             "profile": self.profile,
             "session_key": self.session_key,
+            "role": self.role,
             "username": self.username,
             "password": self.password,
+            "cookie": self.cookie  # Include cookie in the JSON
         })
 
 class RequestSerializer:
