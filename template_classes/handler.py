@@ -15,6 +15,7 @@ permissions: dict[str, list[str]] = {
     "submit_request": ["student"],
     "approve_request": ["staff"],
     "view_requests": ["staff"],
+    "view_approved_requests": ["staff"],
 }
 
 class Handler:

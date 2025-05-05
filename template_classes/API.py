@@ -1,4 +1,4 @@
-from db_manager import get_user, store_in_DB, remove_from_DB, get_user_by_id
+from db_manager import get_user, store_in_DB, remove_from_DB, get_user_by_id, get_approved_requests_by_approver
 from Clients.User import User
 
 class API:
@@ -26,3 +26,9 @@ class API:
 
     def check_name(self, user):
         return user.username
+
+    def get_approved_requests(self, approver_id):
+        """
+        Fetch all approved exit requests for a specific approver.
+        """
+        return get_approved_requests_by_approver(approver_id)

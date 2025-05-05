@@ -114,3 +114,22 @@ def reset_database():
     connection.commit()
     connection.close()
     print("Database reset and structure created successfully")
+
+def get_approved_requests_by_approver(approver_id):
+    """
+    Fetch all approved exit requests for a specific approver.
+    """
+    connection = sqlite3.connect('Database/system.db')
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute("""
+            SELECT * FROM exit_requests WHERE approver_id = ? AND approved = 1
+        """, (approver_id,))
+        requests = cursor.fetchall()
+        return [{"id": r[0], "student_id": r[1], "content": r[2], "approved": bool(r[3])} for r in requests]
+    except sqlite3.OperationalError as e:
+        print(f"Error retrieving approved requests: {e}")
+        return []
+    finally:
+        connection.close()

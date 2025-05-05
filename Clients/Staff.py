@@ -42,3 +42,20 @@ class Staff(User):
         self.conn.send_msg(request.to_json().encode('utf-8'))
         response = self.conn.recv_msg().decode('utf-8')
         #print(response)
+
+    def view_approved_requests(self):
+        request = Request(action="view_approved_requests", role=self.role, profile=self.profile.to_dict(), cookie=self.cookie)
+        self.conn.send_msg(request.to_json().encode('utf-8'))
+        response = self.conn.recv_msg().decode('utf-8')
+        response_data = json.loads(response)
+
+        if response_data.get("status") == "success":
+            requests = response_data.get("requests", [])
+            if requests:
+                print("\n--- Approved Exit Requests ---")
+                for req in requests:
+                    print(f"Request ID: {req['id']}, Student ID: {req['student_id']}, Content: {req['content']}, Approved: {req['approved']}")
+            else:
+                print("No approved exit requests found.")
+        else:
+            print(f"Error: {response_data.get('message')}")

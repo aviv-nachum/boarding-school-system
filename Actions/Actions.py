@@ -168,3 +168,34 @@ def view_requests(handler, req):
         handler.conn.send_msg(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))
     finally:
         connection.close()
+
+@action_handler("view_approved_requests")
+def view_approved_requests(handler, req):
+    print("Handling view_approved_requests action...")
+    profile = req.get("profile", None)
+    if not profile:
+        print("Missing profile in the request.")
+        handler.conn.send_msg(json.dumps({"status": "error", "message": "Profile is required"}).encode('utf-8'))
+        return
+
+    approver_id = profile.get("id", None)
+    if not approver_id:
+        print("Missing approver ID in the profile.")
+        handler.conn.send_msg(json.dumps({"status": "error", "message": "Approver ID is required"}).encode('utf-8'))
+        return
+
+    try:
+        # Fetch approved requests using the API
+        requests = handler.api.get_approved_requests(approver_id)
+
+        # Send the response back to the client
+        cookie = handler.create_cookie(profile.get("name", None), approver_id)
+        handler.conn.send_msg(json.dumps({
+            "status": "success",
+            "requests": requests,
+            "cookie": cookie,
+            "profile": profile
+        }).encode('utf-8'))
+    except Exception as e:
+        print(f"Error handling view_approved_requests: {e}")
+        handler.conn.send_msg(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))

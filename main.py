@@ -134,6 +134,7 @@ def staff_menu():
         print("\n--- Staff Menu ---")
         print("1. Log out")
         print("2. View exit requests")
+        print("3. View approved exit requests")
         choice = input("Choose an option: ").strip()
 
         if choice == "1":
@@ -144,7 +145,8 @@ def staff_menu():
             user.view_requests()
             request_id = int(input("Enter the request ID to approve: ").strip())
             user.approve_request(request_id=request_id)
-            staff_menu()
+        elif choice == "3":
+            user.view_approved_requests()
         else:
             print("Invalid option. Please try again.")
 
