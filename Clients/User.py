@@ -1,6 +1,6 @@
 from socket import socket
 from threading import Thread
-from template_classes.encConnection import ClientEncConnection
+from Encryption_handeling.encConnection import ClientEncConnection
 from config import HOST, PORT
 import base64
 from Actions.Request import Request, RequestSerializer

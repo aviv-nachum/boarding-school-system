@@ -1,6 +1,6 @@
 from typing import Any
-from template_classes.encConnection import ServerEncConnection
-from template_classes.API import API
+from Encryption_handeling.encConnection import ServerEncConnection
+from Encryption_handeling.API import API
 from Actions.Actions import action_handlers
 import json
 import jwt

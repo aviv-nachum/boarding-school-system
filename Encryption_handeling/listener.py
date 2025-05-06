@@ -2,7 +2,7 @@ from socket import socket, AF_INET, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
 from config import HOST, PORT
 import threading
 from threading import Thread
-from template_classes.handler import Handler
+from Encryption_handeling.handler import Handler
 
 
 class Listener:
