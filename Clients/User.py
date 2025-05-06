@@ -1,13 +1,27 @@
+"""
+Defines the base User class for clients in the boarding school system.
+"""
+
 from socket import socket
 from threading import Thread
 from Encryption_handeling.encConnection import ClientEncConnection
 from config import HOST, PORT
-import base64
 from Actions.Request import Request, RequestSerializer
-import json
 
 class User(Thread):
+    """
+    Represents a base user in the boarding school system.
+    """
     def __init__(self, username, password, role, profile):
+        """
+        Initializes a User object.
+
+        Args:
+            username (str): The username of the user.
+            password (str): The password of the user.
+            role (str): The role of the user (e.g., "student", "staff").
+            profile (Profile): The profile object associated with the user.
+        """
         super().__init__()
         self.username = username
         self.password = password
@@ -20,31 +34,48 @@ class User(Thread):
         self.session_id = None
 
     def set_password(self, password):
+        """
+        Sets a new password for the user.
+
+        Args:
+            password (str): The new password to set.
+        """
         self.password = password
 
     def check_password(self, password):
+        """
+        Checks if the provided password matches the user's password.
+
+        Args:
+            password (str): The password to check.
+
+        Returns:
+            bool: True if the password matches, False otherwise.
+        """
         return self.password == password
 
     def run(self):
-        pass #print(f"Connected to the server as {self.role}.")
+        pass # Placeholder for the thread's run method
 
     def login(self, student_id):
-        request = Request(action="login", user_id=student_id, role=self.role, username=self.username, password=self.password)
+        """
+        Sends a login request to the server.
+
+        Args:
+            student_id (str): The ID of the student logging in.
+        """
+        request = Request(
+            action="login",
+            user_id=student_id,
+            role=self.role,
+            username=self.username,
+            password=self.password
+        )
         self.conn.send_msg(request.to_json().encode('utf-8'))
-        #response = self.conn.recv_msg().decode('utf-8')
-        #response_data = json.loads(response)
-        #self.session_id = response_data.get("session_id")
-        #print(response_data.get("message"))
 
     def logout(self):
+        """
+        Sends a logout request to the server.
+        """
         request = Request(action="logout", profile=self.profile.to_dict(), role=self.role)
         self.conn.send_msg(request.to_json().encode('utf-8'))
-
-        #session_key_encoded = base64.b64encode(self.session_key).decode('utf-8')
-        #request = Request(action="logout", content={"session_id": self.session_id}, session_key=session_key_encoded, role=self.role)
-        #serialized_request = RequestSerializer.encode(request)
-        #self.conn.send_msg(serialized_request)
-        
-        #encrypted_response = self.conn.recv_msg()
-        #response = json.loads(encrypted_response.decode('utf-8'))
-        #print(response)

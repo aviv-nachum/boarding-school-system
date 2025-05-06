@@ -10,9 +10,9 @@ from gui import GUI
 if __name__ == "__main__":
     # Initialize and start the server
     server = Server()
-    server.start()
-    sleep(1)
+    server.start()  # Start the server in a separate thread
+    sleep(1)  # Allow the server to initialize
 
-    # Start the GUI
+    # Start the GUI for user interaction
     gui = GUI()
-    gui.main_menu()
+    gui.main_menu()  # Display the main menu

@@ -9,13 +9,18 @@ from Clients.Staff import Staff
 from Profiles.Staff_Profile import Staff_Profile
 from Profiles.Student_Profile import Student_Profile
 from db_manager import get_user
+import sys  # Import the sys module to terminate the program
 
 class GUI:
     """
-    Handles the user interface for the boarding school system.
+    Represents the graphical user interface for the boarding school system.
+    Provides methods for interacting with students and staff.
     """
     def __init__(self):
-        self.user = None  # Tracks the currently logged-in user
+        """
+        Initializes the GUI object.
+        """
+        self.current_user = None  # Tracks the currently logged-in user
 
     def register_student(self):
         """Register a new student."""
@@ -43,10 +48,10 @@ class GUI:
         )
 
         # Initialize the student and register them
-        self.user = Student(name, password, profile)
-        self.user.start()
+        self.current_user = Student(name, password, profile)
+        self.current_user.start()
         sleep(1)
-        self.user.register(profile)
+        self.current_user.register(profile)
         print("Student registered successfully.")
         self.main_menu()
 
@@ -59,10 +64,10 @@ class GUI:
         # Retrieve user data from the database
         user_data = get_user(name)
         if user_data and user_data.role == "student" and user_data.password == password:
-            self.user = Student(name, password, user_data.profile)
-            self.user.start()  # Ensure the handshake is completed
+            self.current_user = Student(name, password, user_data.profile)
+            self.current_user.start()  # Ensure the handshake is completed
             sleep(1)
-            self.user.login(user_data.profile.id)
+            self.current_user.login(user_data.profile.id)
             self.student_menu()
         else:
             print("Invalid username or password.")
@@ -86,10 +91,10 @@ class GUI:
         )
 
         # Initialize the staff member and register them
-        self.user = Staff(name, password, profile)
-        self.user.start()
+        self.current_user = Staff(name, password, profile)
+        self.current_user.start()
         sleep(1)
-        self.user.register(profile)
+        self.current_user.register(profile)
         print("Staff registered successfully.")
         self.main_menu()
 
@@ -102,10 +107,10 @@ class GUI:
         # Retrieve user data from the database
         user_data = get_user(name)
         if user_data and user_data.role == "staff" and user_data.password == password:
-            self.user = Staff(name, password, user_data.profile)
-            self.user.start()
+            self.current_user = Staff(name, password, user_data.profile)
+            self.current_user.start()
             sleep(1)
-            self.user.login(user_data.profile.id)
+            self.current_user.login(user_data.profile.id)
             self.staff_menu()
         else:
             print("Invalid username or password.")
@@ -122,7 +127,7 @@ class GUI:
             if choice == '1':
                 self.submit_request()
             elif choice == '2':
-                self.user.logout()
+                self.current_user.logout()
                 self.main_menu()
             else:
                 print("Invalid choice. Please try again.")
@@ -133,7 +138,7 @@ class GUI:
         approver_id = input("Enter the approver ID: ").strip()
 
         # Submit the request through the student object
-        self.user.submit_request(content, approver_id)
+        self.current_user.submit_request(content, approver_id)
         print("Request submitted successfully.")
         self.student_menu()
 
@@ -147,20 +152,23 @@ class GUI:
             choice = input("Choose an option: ").strip()
 
             if choice == "1":
-                self.user.logout()
+                self.current_user.logout()
                 self.main_menu()
             elif choice == "2":
-                self.user.view_requests()
+                self.current_user.view_requests()
                 request_id = input("Enter the request ID to approve (or press Enter to skip): ").strip()
                 if request_id:
-                    self.user.approve_request(request_id=int(request_id))
+                    self.current_user.approve_request(request_id=int(request_id))
             elif choice == "3":
-                self.user.view_approved_requests()
+                self.current_user.view_approved_requests()
             else:
                 print("Invalid option. Please try again.")
 
     def main_menu(self):
-        """Display the main menu."""
+        """
+        Displays the main menu for the system.
+        Allows the user to choose between student and staff options.
+        """
         while True:
             print("\n--- Main Menu ---")
             print("1. Log in as Student")
@@ -170,16 +178,16 @@ class GUI:
             print("5. Exit")
             choice = input("Choose an option: ").strip()
 
-            if choice == '1':
-                self.login_student()
-            elif choice == '2':
-                self.login_staff()
-            elif choice == '3':
+            if choice == "1":
+                self.student_menu()
+            elif choice == "2":
+                self.staff_menu()
+            elif choice == "3":
                 self.register_student()
-            elif choice == '4':
+            elif choice == "4":
                 self.register_staff()
-            elif choice == '5':
+            elif choice == "5":
                 print("Exiting the system. Goodbye!")
-                break
+                sys.exit()  # Terminate the program
             else:
-                print("Invalid choice. Please try again.")
+                print("Invalid option. Please try again.")
