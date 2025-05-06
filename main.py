@@ -1,21 +1,23 @@
+"""
+Main entry point for the boarding school system.
+Provides the terminal interface for students and staff to interact with the system.
+"""
+
 from time import sleep
 from server import Server
 from Clients.Student import Student
 from Clients.Staff import Staff
 from Profiles.Staff_Profile import Staff_Profile
 from Profiles.Student_Profile import Student_Profile
-from threading import Thread
-from db_manager import get_user, get_user_by_id
-
-interval = 3
+from db_manager import get_user
 
 # Initialize and start the server
 server = Server()
 server.start()
 sleep(1)
 
-user_id = None  # To track the currently logged-in user
-user = None  # To track whether the user is a Student or Staff
+user = None  # Tracks the currently logged-in user
+
 
 def register_student():
     """Register a new student."""
@@ -43,38 +45,39 @@ def register_student():
     )
 
     user = Student(name, password, profile)
-    user.start()  # Ensure connection to the server
-
+    user.start()
     sleep(1)
-
     user.register(profile)
     print("Student registered successfully.")
-    student_menu()
+    main_menu()
+
 
 def login_student():
+    """Log in as a student."""
     global user
     print("\n--- Log in as Student ---")
     name = input("Enter your name: ").strip()
     password = input("Enter your password: ").strip()
     user_data = get_user(name)
-    if user_data and user_data.role == "student":
+    if user_data and user_data.role == "student" and user_data.password == password:
         user = Student(name, password, user_data.profile)
         user.start()
         sleep(1)
         user.login(user_data.profile.id)
         student_menu()
     else:
-        print("Invalid Student ID or user is not a student.")
+        print("Invalid username or password.")
+        main_menu()
+
 
 def register_staff():
+    """Register a new staff member."""
     global user
     print("\n--- Register as Staff ---")
     staff_id = input("Enter your ID: ").strip()
     name = input("Enter your name: ").strip()
     surname = input("Enter your surname: ").strip()
     password = input("Enter your password: ").strip()
-    #client_student_id_dict = input("Enter the client student ID dictionary: ").strip()
-    #Request_ids = input("Enter the request IDs: ").strip()
 
     profile = Staff_Profile(
         id=staff_id,
@@ -89,24 +92,29 @@ def register_staff():
     sleep(1)
     user.register(profile)
     print("Staff registered successfully.")
-    staff_menu()
+    main_menu()
+
 
 def login_staff():
+    """Log in as a staff member."""
     global user
     print("\n--- Log in as Staff ---")
     name = input("Enter your name: ").strip()
     password = input("Enter your password: ").strip()
     user_data = get_user(name)
-    if user_data and user_data.role == "staff":
+    if user_data and user_data.role == "staff" and user_data.password == password:
         user = Staff(name, password, user_data.profile)
         user.start()
         sleep(1)
         user.login(user_data.profile.id)
         staff_menu()
     else:
-        print("Invalid Staff ID or user is not a staff member.")
+        print("Invalid username or password.")
+        main_menu()
+
 
 def student_menu():
+    """Display the student menu."""
     while True:
         print("\n--- Student Menu ---")
         print("1. Submit Request")
@@ -121,15 +129,18 @@ def student_menu():
         else:
             print("Invalid choice. Please try again.")
 
+
 def submit_request():
+    """Submit a new exit request."""
     content = input("Enter your request content: ").strip()
     approver_id = input("Enter the approver ID: ").strip()
     user.submit_request(content, approver_id)
+    print("Request submitted successfully.")
     student_menu()
+
 
 def staff_menu():
     """Display the staff menu."""
-    global user_id, user
     while True:
         print("\n--- Staff Menu ---")
         print("1. Log out")
@@ -139,18 +150,20 @@ def staff_menu():
 
         if choice == "1":
             user.logout()
-            user_id = None
             main_menu()
         elif choice == "2":
             user.view_requests()
-            request_id = int(input("Enter the request ID to approve: ").strip())
-            user.approve_request(request_id=request_id)
+            request_id = input("Enter the request ID to approve (or press Enter to skip): ").strip()
+            if request_id:
+                user.approve_request(request_id=int(request_id))
         elif choice == "3":
             user.view_approved_requests()
         else:
             print("Invalid option. Please try again.")
 
+
 def main_menu():
+    """Display the main menu."""
     while True:
         print("\n--- Main Menu ---")
         print("1. Log in as Student")
@@ -169,9 +182,11 @@ def main_menu():
         elif choice == '4':
             register_staff()
         elif choice == '5':
+            print("Exiting the system. Goodbye!")
             break
         else:
             print("Invalid choice. Please try again.")
+
 
 if __name__ == "__main__":
     main_menu()
