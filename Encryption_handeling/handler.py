@@ -1,3 +1,7 @@
+"""
+Handles incoming requests and manages user permissions for the boarding school system.
+"""
+
 from typing import Any
 from Encryption_handeling.encConnection import ServerEncConnection
 from Encryption_handeling.API import API
@@ -6,6 +10,7 @@ import json
 import jwt
 import datetime
 
+# Define permissions for each action based on user roles
 permissions: dict[str, list[str]] = {
     "signupStudent": ["guest", "student", "staff"],
     "signupStaff": ["guest", "student", "staff"],
@@ -19,15 +24,32 @@ permissions: dict[str, list[str]] = {
 }
 
 class Handler:
+    """
+    Handles client requests and manages user sessions.
+    """
     def __init__(self, conn, host, port):
+        """
+        Initializes the Handler with a connection and server details.
+
+        Args:
+            conn (ServerEncConnection): The encrypted server connection.
+            host (str): The host address of the server.
+            port (int): The port number of the server.
+        """
         self.conn = ServerEncConnection(host, port, conn)
         self.host = host
         self.key = "secret"
         self.api = API()
         self.active_role = "guest"
-        self.active_user = None
+        self.active_user = None  # Tracks the currently active user
 
     def handle_request(self, request: bytes):
+        """
+        Processes an incoming request from the client.
+
+        Args:
+            request (bytes): The raw request data received from the client.
+        """
         #print("Handling request...")
         req: dict[str, Any] = json.loads(request)
         #print(f"Request: {req}")
@@ -49,6 +71,15 @@ class Handler:
             action_handlers[action](self, req)
 
     def set_active_user_name(self, req: dict[str, Any]) -> str | None:
+        """
+        Sets the active user's name based on the request.
+
+        Args:
+            req (dict[str, Any]): The request data.
+
+        Returns:
+            str | None: The username of the active user, or None if not set.
+        """
         self.active_user = None
         cookie = req.get("cookie", None)
         try:
@@ -64,6 +95,9 @@ class Handler:
             print(f"Cookie error: {e}")
 
     def handle_forever(self) -> None:
+        """
+        Continuously handles incoming requests from the client.
+        """
         self.conn.start()
 #        #print("Server up and running")
         while True:
@@ -76,6 +110,15 @@ class Handler:
                 break  # Exit the loop if there's a connection error
 
     def permit_action(self, action: str) -> bool:
+        """
+        Checks if the active user has permission to perform the specified action.
+
+        Args:
+            action (str): The action to check permissions for.
+
+        Returns:
+            bool: True if the action is permitted, False otherwise.
+        """
         if action not in permissions:
             print(f"Action '{action}' not found in permissions.")
             return False
@@ -83,6 +126,16 @@ class Handler:
         return self.active_role in permissions[action]
 
     def create_cookie(self, username: str, id: int):
+        """
+        Creates a JWT cookie for the user.
+
+        Args:
+            username (str): The username of the user.
+            id (int): The user ID.
+
+        Returns:
+            str: The encoded JWT cookie.
+        """
         cookie = {
             "username": username,
             "id": id,
