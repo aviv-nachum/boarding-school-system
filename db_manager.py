@@ -1,3 +1,8 @@
+"""
+Database manager for the boarding school system.
+Handles database operations such as storing, retrieving, and deleting users and requests.
+"""
+
 import os
 import sqlite3
 import json
@@ -7,6 +12,12 @@ from Clients.User import User
 from Profiles.Profile import Profile
 
 def store_in_DB(user):
+    """
+    Stores a user in the database.
+
+    Args:
+        user (User): The user object to store.
+    """
     connection = sqlite3.connect('Database/system.db')
     cursor = connection.cursor()
 
@@ -22,6 +33,12 @@ def store_in_DB(user):
         connection.close()
 
 def remove_from_DB(username):
+    """
+    Removes a user from the database by username.
+
+    Args:
+        username (str): The username of the user to remove.
+    """
     connection = sqlite3.connect('Database/system.db')
     cursor = connection.cursor()
 
@@ -34,6 +51,15 @@ def remove_from_DB(username):
         connection.close()
 
 def get_user(username):
+    """
+    Retrieves a user from the database by username.
+
+    Args:
+        username (str): The username of the user to retrieve.
+
+    Returns:
+        User: The user object if found, otherwise None.
+    """
     connection = sqlite3.connect('Database/system.db')
     cursor = connection.cursor()
 
@@ -58,6 +84,15 @@ def get_user(username):
         connection.close()
 
 def get_user_by_id(id):
+    """
+    Retrieves a user from the database by ID.
+
+    Args:
+        id (str): The ID of the user to retrieve.
+
+    Returns:
+        User: The user object if found, otherwise None.
+    """
     connection = sqlite3.connect('Database/system.db')
     cursor = connection.cursor()
 
@@ -82,6 +117,9 @@ def get_user_by_id(id):
         connection.close()
 
 def reset_database():
+    """
+    Resets the database by deleting the existing file and recreating the structure.
+    """
     db_path = 'Database/system.db'
     
     # Remove the existing database file if it exists
@@ -117,7 +155,13 @@ def reset_database():
 
 def get_approved_requests_by_approver(approver_id):
     """
-    Fetch all approved exit requests for a specific approver.
+    Fetches all approved exit requests for a specific approver.
+
+    Args:
+        approver_id (str): The ID of the approver.
+
+    Returns:
+        list[dict]: A list of approved requests.
     """
     connection = sqlite3.connect('Database/system.db')
     cursor = connection.cursor()
