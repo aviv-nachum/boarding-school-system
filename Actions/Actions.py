@@ -1,20 +1,41 @@
+"""
+Defines action handlers for various operations in the boarding school system.
+"""
+
 from Encryption_handeling.API import API
 import json
 import sqlite3
 
+# Initialize the API instance
 api = API()
 
+# Dictionary to store action handlers
 action_handlers = {}
 
 def action_handler(action_name):
+    """
+    Decorator to register a function as an action handler.
+
+    Args:
+        action_name (str): The name of the action to handle.
+
+    Returns:
+        function: The decorated function.
+    """
     def decorator(func):
-        action_handlers[action_name] = func
+        action_handlers[action_name] = func  # Register the function in the action_handlers dictionary
         return func
     return decorator
 
 @action_handler("signupStudent")
 def signup_student(handler, req):
-    #print("Handling signupStudent action...")
+    """
+    Handles the signup action for students.
+
+    Args:
+        handler (Handler): The handler managing the request.
+        req (dict): The request data.
+    """
     profile = req.get("profile", None)
     username = profile.get("name", None)
     password = profile.get("password", None)
@@ -28,7 +49,13 @@ def signup_student(handler, req):
 
 @action_handler("signupStaff")
 def signup_staff(handler, req):
-    #print("Handling signupStaff action...")
+    """
+    Handles the signup action for staff members.
+
+    Args:
+        handler (Handler): The handler managing the request.
+        req (dict): The request data.
+    """
     profile = req.get("profile", None)
     username = profile.get("name", None)
     password = profile.get("password", None)
@@ -42,7 +69,13 @@ def signup_staff(handler, req):
 
 @action_handler("login")
 def login(handler, req):
-    #print("Handling login action...")
+    """
+    Handles the login action for users.
+
+    Args:
+        handler (Handler): The handler managing the request.
+        req (dict): The request data.
+    """
     username = req.get("username", None)
     password = req.get("password", None)
     if not username or not password:
@@ -67,7 +100,13 @@ def login(handler, req):
 
 @action_handler("remove_user")
 def remove_user(handler, req):
-    #print("Handling remove_user action...")
+    """
+    Handles the action to remove a user.
+
+    Args:
+        handler (Handler): The handler managing the request.
+        req (dict): The request data.
+    """
     username = req.get("username", None)
     if not username:
         print("Missing required fields for remove_user.")
@@ -77,12 +116,24 @@ def remove_user(handler, req):
 
 @action_handler("logout")
 def logout(handler, req):
-    #print("Handling logout action...")
+    """
+    Handles the logout action for users.
+
+    Args:
+        handler (Handler): The handler managing the request.
+        req (dict): The request data.
+    """
     handler.conn.send_msg(json.dumps({"status": "success", "message": "Logout successful"}).encode('utf-8'))
 
 @action_handler("submit_request")
 def submit_request(handler, req):
-    #print("Handling submit_request action...")
+    """
+    Handles the action to submit a request.
+
+    Args:
+        handler (Handler): The handler managing the request.
+        req (dict): The request data.
+    """
     profile = req.get("profile", None)
     name = profile.get("name", None)
     student_id = profile.get("id", None)
@@ -109,7 +160,13 @@ def submit_request(handler, req):
 
 @action_handler("approve_request")
 def approve_request(handler, req):
-    #print("Handling approve_request action...")
+    """
+    Handles the action to approve a request.
+
+    Args:
+        handler (Handler): The handler managing the request.
+        req (dict): The request data.
+    """
     request_id = req.get("request_id", None)
     if not request_id:
         print("Missing required fields for approve_request.")
@@ -130,7 +187,13 @@ def approve_request(handler, req):
 
 @action_handler("view_requests")
 def view_requests(handler, req):
-    print("Handling view_requests action...")
+    """
+    Handles the action to view pending requests.
+
+    Args:
+        handler (Handler): The handler managing the request.
+        req (dict): The request data.
+    """
     profile = req.get("profile", None)
     if not profile:
         print("Missing profile in the request.")
@@ -171,7 +234,13 @@ def view_requests(handler, req):
 
 @action_handler("view_approved_requests")
 def view_approved_requests(handler, req):
-    print("Handling view_approved_requests action...")
+    """
+    Handles the action to view approved requests.
+
+    Args:
+        handler (Handler): The handler managing the request.
+        req (dict): The request data.
+    """
     profile = req.get("profile", None)
     if not profile:
         print("Missing profile in the request.")
