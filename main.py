@@ -5,7 +5,8 @@ Starts the server and initializes the GUI for user interaction.
 
 from time import sleep
 from server import Server
-from gui import GUI
+from gui_tkinter import GUIApp
+import tkinter as tk
 
 if __name__ == "__main__":
     # Initialize and start the server
@@ -13,6 +14,7 @@ if __name__ == "__main__":
     server.start()  # Start the server in a separate thread
     sleep(1)  # Allow the server to initialize
 
-    # Start the GUI for user interaction
-    gui = GUI()
-    gui.main_menu()  # Display the main menu
+    # Start the tkinter GUI for user interaction
+    root = tk.Tk()
+    app = GUIApp(root)
+    root.mainloop()

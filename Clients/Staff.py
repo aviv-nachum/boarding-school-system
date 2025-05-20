@@ -57,49 +57,61 @@ class Staff(User):
         self.conn.send_msg(request.to_json().encode('utf-8'))
         
     def view_requests(self):
-        request = Request(action="view_requests", role=self.role, profile=self.profile.to_dict(), cookie=self.cookie)  
+        """
+        Fetches the list of pending exit requests from the server.
+
+        Returns:
+            list[dict]: A list of pending requests, where each request is a dictionary.
+        """
+        # Send a request to the server to fetch pending requests
+        request = Request(action="view_requests", role=self.role, profile=self.profile.to_dict(), cookie=self.cookie)
         self.conn.send_msg(request.to_json().encode('utf-8'))
+
+        # Receive the response from the server
         response = self.conn.recv_msg().decode('utf-8')
         response_data = json.loads(response)
 
         if response_data.get("status") == "success":
-            requests = response_data.get("requests", [])
-            if requests:
-                print("\n--- Exit Requests ---")
-                for req in requests:
-                    print(f"Request ID: {req['id']}, Student ID: {req['student_id']}, Content: {req['content']}, Approved: {req['approved']}")
-            else:
-                print("No exit requests found.")
+            return response_data.get("requests", [])
         else:
             print(f"Error: {response_data.get('message')}")
+            return []
 
     def approve_request(self, request_id):
         """
-        Sends a request to approve a specific request.
+        Sends a request to the server to approve a specific exit request.
 
         Args:
-            request_id (str): The ID of the request to approve.
+            request_id (int): The ID of the request to approve.
         """
-        # Create a request to approve a specific request
+        # Send an approval request to the server
         request = Request(action="approve_request", request_id=request_id, role=self.role)
-        request.cookie = self.cookie  # Include the cookie in the request
         self.conn.send_msg(request.to_json().encode('utf-8'))
-        request.cookie = self.cookie  # Includeonse cookie in theonn.recv'utf-8')
-        #print(response)
+
+        # Receive the response from the server
+        response = self.conn.recv_msg().decode('utf-8')
+        if response == "success":
+            print(f"Request ID {request_id} approved successfully.")
+        else:
+            print(f"Failed to approve Request ID {request_id}.")
 
     def view_approved_requests(self):
+        """
+        Fetches the list of approved exit requests from the server.
+
+        Returns:
+            list[dict]: A list of approved requests, where each request is a dictionary.
+        """
+        # Send a request to the server to fetch approved requests
         request = Request(action="view_approved_requests", role=self.role, profile=self.profile.to_dict(), cookie=self.cookie)
         self.conn.send_msg(request.to_json().encode('utf-8'))
+
+        # Receive the response from the server
         response = self.conn.recv_msg().decode('utf-8')
         response_data = json.loads(response)
 
         if response_data.get("status") == "success":
-            requests = response_data.get("requests", [])
-            if requests:
-                print("\n--- Approved Exit Requests ---")
-                for req in requests:
-                    print(f"Request ID: {req['id']}, Student ID: {req['student_id']}, Content: {req['content']}, Approved: {req['approved']}")
-            else:
-                print("No approved exit requests found.")
+            return response_data.get("requests", [])
         else:
             print(f"Error: {response_data.get('message')}")
+            return []
